@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cache.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="../doc-style.css" />
+  <script src="../doc-filelist.js"></script>
+  <script>
+    var relativeDir = "../";
+    var thisFile = "lib/Cache.js";
+    var defaultSidebar = true;
+  </script>
+  <script src="../doc-script.js"></script>
+
+</head>
+<body>
+  <div id="sidebar_wrapper">
+    <div id="sidebar_switch">
+      <span class="tree">Files</span>
+      <span class="headings">Headings</span>
+    </div>
+    <div id="tree"></div>
+    <div id="headings">
+
+      <div class="heading h2">
+        <a href="#invalidate">invalidate</a>
+      </div>
+
+    </div>
+  </div>
+  <div id="sidebar-toggle"></div>
+  <div id="container">
+    <div class="background highlight"></div>
+<table cellpadding="0" cellspacing="0">
+  <tbody>
+    
+      <tr>
+        <td class="docs">
+          <h1>Cache.js</h1>
+        </td>
+        <td class="code highlight"></td>
+      </tr>
+    
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-1" id="section-1"></a>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript"><span class="hljs-keyword">import</span> debug <span class="hljs-keyword">from</span> <span class="hljs-string">'debug'</span>
+<span class="hljs-keyword">import</span> vow <span class="hljs-keyword">from</span> <span class="hljs-string">'vow'</span>
+<span class="hljs-keyword">import</span> promiseSpool <span class="hljs-keyword">from</span> <span class="hljs-string">'promise-spool'</span>
+<span class="hljs-keyword">import</span> {
+  join,
+  resolve
+} <span class="hljs-keyword">from</span> <span class="hljs-string">'path'</span>
+<span class="hljs-keyword">import</span> {
+  statSync,
+  existsSync
+} <span class="hljs-keyword">from</span> <span class="hljs-string">'fs'</span>
+<span class="hljs-keyword">import</span> Nedb <span class="hljs-keyword">from</span> <span class="hljs-string">'nedb'</span>
+<span class="hljs-keyword">const</span> dbg = debug(<span class="hljs-string">'metalsmith-contentful'</span>)
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Cache</span> </span>{
+  <span class="hljs-keyword">constructor</span> (options) {
+    <span class="hljs-keyword">if</span> (!options.space) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'required: options.space'</span>)
+    <span class="hljs-keyword">this</span>.opt = options
+    <span class="hljs-keyword">let</span> path = resolve(__dirname, <span class="hljs-string">'cache'</span>, <span class="hljs-string">`<span class="hljs-subst">${options.space}</span>.db`</span>)
+    <span class="hljs-keyword">if</span> (existsSync(path) &amp;&amp; <span class="hljs-keyword">this</span>.cache !== <span class="hljs-string">'invalidate'</span>) {
+      <span class="hljs-keyword">this</span>.lastUpdated = statSync(path).mtime.toISOString()
+    }
+    <span class="hljs-keyword">this</span>.db = <span class="hljs-keyword">new</span> Nedb(path)
+    <span class="hljs-keyword">this</span>.db.loadDatabase()
+  }
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="invalidate">
+  <h2>
+    <a href="#invalidate" name="invalidate" class="pilcrow"></a>
+invalidate
+  </h2>
+</div>
+<p>invalidate cache</p>
+</div>
+<div class="body">
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  invalidate () {
+    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.opt.cache === <span class="hljs-string">'invalidate'</span>) {
+      dbg(<span class="hljs-string">'invalidating cache'</span>)
+      <span class="hljs-keyword">const</span> defer = vow.defer()
+      <span class="hljs-keyword">this</span>.db.remove({}, {<span class="hljs-attr">multi</span>: <span class="hljs-literal">true</span>}, defer.resolve.bind(defer))
+      <span class="hljs-keyword">return</span> defer.promise()
+    }
+  }
+  count () {
+    <span class="hljs-keyword">let</span> defer = vow.defer()
+    <span class="hljs-keyword">this</span>.db.count({}, (err, count) =&gt; {
+      <span class="hljs-keyword">if</span> (err) defer.reject(err)
+      defer.resolve(count)
+    })
+    <span class="hljs-keyword">return</span> defer.promise()
+  }
+  upsert (doc) {
+    <span class="hljs-keyword">let</span> defer = vow.defer()
+    <span class="hljs-keyword">this</span>.db.update(
+      {<span class="hljs-string">'sys.id'</span>: doc.sys.id},
+      doc,
+      {<span class="hljs-attr">upsert</span>: <span class="hljs-literal">true</span>},
+      defer.resolve.bind(defer)
+    )
+    <span class="hljs-keyword">return</span> defer.promise()
+  }
+  getCollection (query = {}, resolveDepth = <span class="hljs-number">1</span>) {
+    <span class="hljs-keyword">let</span> collection = {}
+    <span class="hljs-keyword">return</span> promiseSpool({
+      <span class="hljs-attr">fetch</span>: <span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+        <span class="hljs-keyword">let</span> defer = vow.defer()
+        <span class="hljs-keyword">this</span>.db.find(query, (err, docs) =&gt; {
+          <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-3" id="section-3"></a>
+</div>
+<p>add null for end of data</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">          docs.push(<span class="hljs-literal">null</span>)
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-4" id="section-4"></a>
+</div>
+<p>docs.forEach((doc) =&gt; dbg(doc.sys.contentType))</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">          defer.resolve(docs)
+        })
+        <span class="hljs-keyword">return</span> defer.promise()
+      },
+      <span class="hljs-attr">worker</span>: <span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.resolve(doc, resolveDepth)
+        .then(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> { collection[doc.sys.id] = doc.fields })
+      }
+    })
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+      <span class="hljs-keyword">return</span> collection
+    })
+  }
+  resolve (fields, depth = <span class="hljs-number">1</span>) {
+    <span class="hljs-keyword">let</span> resolvers = []
+    <span class="hljs-built_in">Object</span>.keys(fields).forEach(<span class="hljs-function">(<span class="hljs-params">key</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (key === <span class="hljs-string">'sys'</span>) <span class="hljs-keyword">return</span>
+      <span class="hljs-keyword">if</span> (fields[key] === <span class="hljs-literal">null</span>) <span class="hljs-keyword">return</span>
+      <span class="hljs-keyword">if</span> (fields[key].sys) {
+        resolvers.push(
+          <span class="hljs-keyword">this</span>.byId(fields[key].sys.id).then(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> {
+            fields[key] = doc.fields
+          })
+        )
+      } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> fields[key] === <span class="hljs-string">'object'</span> &amp;&amp; depth) {
+        resolvers.push(
+          <span class="hljs-keyword">this</span>.resolve(fields[key], depth - <span class="hljs-number">1</span>).then(<span class="hljs-function">(<span class="hljs-params">res</span>) =&gt;</span> {
+            fields[key] = res
+          })
+        )
+      }
+    })
+    <span class="hljs-keyword">return</span> vow.all(resolvers).then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> fields)
+  }
+  byId (id) {
+    <span class="hljs-keyword">let</span> defer = vow.defer()
+    <span class="hljs-keyword">this</span>.db.findOne({<span class="hljs-string">'sys.id'</span>: id}, (err, doc) =&gt; {
+      <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
+      defer.resolve(doc)
+    })
+    <span class="hljs-keyword">return</span> defer.promise()
+  }
+}
+
+</pre>
+        </td>
+      </tr>
+    
+  </tbody>
+</table>
+
+  </div>
+</body>
+</html>

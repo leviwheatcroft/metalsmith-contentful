@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>package.json</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="doc-style.css" />
+  <script src="doc-filelist.js"></script>
+  <script>
+    var relativeDir = "";
+    var thisFile = "package.json";
+    var defaultSidebar = true;
+  </script>
+  <script src="doc-script.js"></script>
+
+</head>
+<body>
+  <div id="sidebar_wrapper">
+    <div id="sidebar_switch">
+      <span class="tree">Files</span>
+      <span class="headings">Headings</span>
+    </div>
+    <div id="tree"></div>
+    <div id="headings">
+
+    </div>
+  </div>
+  <div id="sidebar-toggle"></div>
+  <div id="container">
+    <div class="background highlight"></div>
+<table cellpadding="0" cellspacing="0">
+  <tbody>
+    
+      <tr>
+        <td class="docs">
+          <h1>package.json</h1>
+        </td>
+        <td class="code highlight"></td>
+      </tr>
+    
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-1" id="section-1"></a>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="json">{
+  <span class="hljs-attr">"name"</span>: <span class="hljs-string">"metalsmith-contentful"</span>,
+  <span class="hljs-attr">"version"</span>: <span class="hljs-string">"0.0.0"</span>,
+  <span class="hljs-attr">"description"</span>: <span class="hljs-string">"metalsmith plugin scrape content from contentful"</span>,
+  <span class="hljs-attr">"main"</span>: <span class="hljs-string">"dist/index.js"</span>,
+  <span class="hljs-attr">"scripts"</span>: {
+    <span class="hljs-attr">"docs"</span>: <span class="hljs-string">"rm -fr ./docs/* &amp;&amp; docker -o ./docs -I -x dist,.README.md,test/fixtures,node_modules,docs,.store"</span>,
+    <span class="hljs-attr">"readme"</span>: <span class="hljs-string">"node-readme"</span>,
+    <span class="hljs-attr">"gh-pages"</span>: <span class="hljs-string">"gh-pages -d docs"</span>,
+    <span class="hljs-attr">"build"</span>: <span class="hljs-string">"npm run babel &amp;&amp; npm run readme &amp;&amp; npm run docs &amp;&amp; cp docs/README.md.html docs/index.html &amp;&amp; npm run gh-pages"</span>,
+    <span class="hljs-attr">"babel"</span>: <span class="hljs-string">"cross-env NODE_ENV=node6 babel lib -d dist"</span>,
+    <span class="hljs-attr">"babel:watch"</span>: <span class="hljs-string">"cross-env NODE_ENV=node6 babel lib -d dist -w"</span>,
+    <span class="hljs-attr">"test:coverage"</span>: <span class="hljs-string">"cross-env NODE_ENV=test nyc --reporter=lcov --reporter=text --check-coverage --lines 100 npm run test"</span>,
+    <span class="hljs-attr">"test"</span>: <span class="hljs-string">"cross-env DEBUG=metalsmith*,flashheart NODE_ENV=test mocha --compilers js:babel-register test/index"</span>,
+    <span class="hljs-attr">"test:watch"</span>: <span class="hljs-string">"cross-env NODE_ENV=test mocha --compilers js:babel-register --watch test"</span>,
+    <span class="hljs-attr">"version"</span>: <span class="hljs-string">"npm run build"</span>,
+    <span class="hljs-attr">"postversion"</span>: <span class="hljs-string">"git push &amp;&amp; git push --tags"</span>
+  },
+  <span class="hljs-attr">"publishConfig"</span>: {
+    <span class="hljs-attr">"registry"</span>: <span class="hljs-string">"https://registry.npmjs.org/"</span>
+  },
+  <span class="hljs-attr">"repository"</span>: {
+    <span class="hljs-attr">"type"</span>: <span class="hljs-string">"git"</span>,
+    <span class="hljs-attr">"url"</span>: <span class="hljs-string">"git+https://github.com/leviwheatcroft/metalsmith-contentful.git"</span>
+  },
+  <span class="hljs-attr">"keywords"</span>: [
+    <span class="hljs-string">"metalsmith"</span>,
+    <span class="hljs-string">"plugin"</span>,
+    <span class="hljs-string">"mime"</span>,
+    <span class="hljs-string">"type"</span>
+  ],
+  <span class="hljs-attr">"author"</span>: <span class="hljs-string">"Levi Wheatcroft &lt;levi@wheatcrofts.com.au&gt; (http://leviwheatcroft.com)"</span>,
+  <span class="hljs-attr">"license"</span>: <span class="hljs-string">"MIT"</span>,
+  <span class="hljs-attr">"bugs"</span>: {
+    <span class="hljs-attr">"url"</span>: <span class="hljs-string">"https://github.com/leviwheatcroft/metalsmith-contentful/issues"</span>
+  },
+  <span class="hljs-attr">"homepage"</span>: <span class="hljs-string">"https://github.com/leviwheatcroft/metalsmith-contentful#readme"</span>,
+  <span class="hljs-attr">"dependencies"</span>: {
+    <span class="hljs-attr">"async"</span>: <span class="hljs-string">"^2.5.0"</span>,
+    <span class="hljs-attr">"contentful"</span>: <span class="hljs-string">"^4.6.1"</span>,
+    <span class="hljs-attr">"debug"</span>: <span class="hljs-string">"^2.6.8"</span>,
+    <span class="hljs-attr">"flashheart"</span>: <span class="hljs-string">"^2.9.0"</span>,
+    <span class="hljs-attr">"metalsmith-cache"</span>: <span class="hljs-string">"^1.1.0"</span>,
+    <span class="hljs-attr">"nedb"</span>: <span class="hljs-string">"^1.8.0"</span>,
+    <span class="hljs-attr">"promise-spool"</span>: <span class="hljs-string">"^1.0.6"</span>,
+    <span class="hljs-attr">"slugify"</span>: <span class="hljs-string">"^1.2.1"</span>,
+    <span class="hljs-attr">"vow"</span>: <span class="hljs-string">"^0.4.13"</span>
+  },
+  <span class="hljs-attr">"devDependencies"</span>: {
+    <span class="hljs-attr">"metalsmith"</span>: <span class="hljs-string">"^2.2.0"</span>,
+    <span class="hljs-attr">"babel-cli"</span>: <span class="hljs-string">"^6.16.0"</span>,
+    <span class="hljs-attr">"config"</span>: <span class="hljs-string">"^1.24.0"</span>,
+    <span class="hljs-attr">"babel-core"</span>: <span class="hljs-string">"^6.17.0"</span>,
+    <span class="hljs-attr">"babel-eslint"</span>: <span class="hljs-string">"^7.0.0"</span>,
+    <span class="hljs-attr">"babel-plugin-add-module-exports"</span>: <span class="hljs-string">"^0.2.1"</span>,
+    <span class="hljs-attr">"babel-plugin-istanbul"</span>: <span class="hljs-string">"^2.0.1"</span>,
+    <span class="hljs-attr">"babel-preset-es2015-node4"</span>: <span class="hljs-string">"^2.1.0"</span>,
+    <span class="hljs-attr">"babel-preset-es2015-node6"</span>: <span class="hljs-string">"^0.3.0"</span>,
+    <span class="hljs-attr">"babel-preset-stage-0"</span>: <span class="hljs-string">"^6.16.0"</span>,
+    <span class="hljs-attr">"babel-register"</span>: <span class="hljs-string">"^6.16.3"</span>,
+    <span class="hljs-attr">"cross-env"</span>: <span class="hljs-string">"^3.1.3"</span>,
+    <span class="hljs-attr">"docker"</span>: <span class="hljs-string">"^1.0.0"</span>,
+    <span class="hljs-attr">"eslint"</span>: <span class="hljs-string">"^3.7.1"</span>,
+    <span class="hljs-attr">"eslint-config-standard"</span>: <span class="hljs-string">"^6.2.0"</span>,
+    <span class="hljs-attr">"eslint-plugin-babel"</span>: <span class="hljs-string">"^3.3.0"</span>,
+    <span class="hljs-attr">"eslint-plugin-promise"</span>: <span class="hljs-string">"^3.0.0"</span>,
+    <span class="hljs-attr">"eslint-plugin-standard"</span>: <span class="hljs-string">"^2.0.1"</span>,
+    <span class="hljs-attr">"gh-pages"</span>: <span class="hljs-string">"^0.12.0"</span>,
+    <span class="hljs-attr">"lodash"</span>: <span class="hljs-string">"^4.17.4"</span>,
+    <span class="hljs-attr">"mocha"</span>: <span class="hljs-string">"^3.1.2"</span>,
+    <span class="hljs-attr">"mocha-eslint"</span>: <span class="hljs-string">"^3.0.1"</span>,
+    <span class="hljs-attr">"nock"</span>: <span class="hljs-string">"^9.0.2"</span>,
+    <span class="hljs-attr">"node-readme"</span>: <span class="hljs-string">"^0.1.9"</span>,
+    <span class="hljs-attr">"node-resemble-js"</span>: <span class="hljs-string">"^0.1.1"</span>,
+    <span class="hljs-attr">"nyc"</span>: <span class="hljs-string">"^8.3.1"</span>,
+    <span class="hljs-attr">"sinon"</span>: <span class="hljs-string">"^1.17.7"</span>
+  },
+  <span class="hljs-attr">"eslintConfig"</span>: {
+    <span class="hljs-attr">"parser"</span>: <span class="hljs-string">"babel-eslint"</span>,
+    <span class="hljs-attr">"extends"</span>: <span class="hljs-string">"standard"</span>,
+    <span class="hljs-attr">"installedESLint"</span>: <span class="hljs-literal">true</span>,
+    <span class="hljs-attr">"plugins"</span>: [
+      <span class="hljs-string">"standard"</span>,
+      <span class="hljs-string">"babel"</span>
+    ],
+    <span class="hljs-attr">"env"</span>: {
+      <span class="hljs-attr">"node"</span>: <span class="hljs-literal">true</span>,
+      <span class="hljs-attr">"mocha"</span>: <span class="hljs-literal">true</span>
+    }
+  },
+  <span class="hljs-attr">"babel"</span>: {
+    <span class="hljs-attr">"presets"</span>: [
+      <span class="hljs-string">"stage-0"</span>
+    ],
+    <span class="hljs-attr">"plugins"</span>: [
+      <span class="hljs-string">"add-module-exports"</span>
+    ],
+    <span class="hljs-attr">"env"</span>: {
+      <span class="hljs-attr">"test"</span>: {
+        <span class="hljs-attr">"presets"</span>: [
+          <span class="hljs-string">"es2015-node6"</span>
+        ],
+        <span class="hljs-attr">"plugins"</span>: [
+          <span class="hljs-string">"istanbul"</span>
+        ]
+      },
+      <span class="hljs-attr">"node4"</span>: {
+        <span class="hljs-attr">"presets"</span>: [
+          <span class="hljs-string">"es2015-node4"</span>
+        ]
+      },
+      <span class="hljs-attr">"node6"</span>: {
+        <span class="hljs-attr">"presets"</span>: [
+          <span class="hljs-string">"es2015-node6"</span>
+        ]
+      }
+    }
+  },
+  <span class="hljs-attr">"nyc"</span>: {
+    <span class="hljs-attr">"include"</span>: [
+      <span class="hljs-string">"lib/**/*.js"</span>
+    ],
+    <span class="hljs-attr">"require"</span>: [
+      <span class="hljs-string">"babel-register"</span>
+    ],
+    <span class="hljs-attr">"sourceMap"</span>: <span class="hljs-literal">false</span>,
+    <span class="hljs-attr">"instrument"</span>: <span class="hljs-literal">false</span>
+  },
+  <span class="hljs-attr">"directories"</span>: {
+    <span class="hljs-attr">"test"</span>: <span class="hljs-string">"test"</span>
+  }
+}
+
+</pre>
+        </td>
+      </tr>
+    
+  </tbody>
+</table>
+
+  </div>
+</body>
+</html>

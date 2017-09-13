@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>index.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="../doc-style.css" />
+  <script src="../doc-filelist.js"></script>
+  <script>
+    var relativeDir = "../";
+    var thisFile = "lib/index.js";
+    var defaultSidebar = true;
+  </script>
+  <script src="../doc-script.js"></script>
+
+</head>
+<body>
+  <div id="sidebar_wrapper">
+    <div id="sidebar_switch">
+      <span class="tree">Files</span>
+      <span class="headings">Headings</span>
+    </div>
+    <div id="tree"></div>
+    <div id="headings">
+
+      <div class="heading h3">
+        <a href="#plugin">plugin</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#contentful">contentful</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#scrape">scrape</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#coerce">coerce</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#mergecache">mergeCache</a>
+      </div>
+
+    </div>
+  </div>
+  <div id="sidebar-toggle"></div>
+  <div id="container">
+    <div class="background highlight"></div>
+<table cellpadding="0" cellspacing="0">
+  <tbody>
+    
+      <tr>
+        <td class="docs">
+          <h1>index.js</h1>
+        </td>
+        <td class="code highlight"></td>
+      </tr>
+    
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-1" id="section-1"></a>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript"><span class="hljs-keyword">import</span> debug <span class="hljs-keyword">from</span> <span class="hljs-string">'debug'</span>
+<span class="hljs-keyword">import</span> vow <span class="hljs-keyword">from</span> <span class="hljs-string">'vow'</span>
+<span class="hljs-keyword">import</span> {
+  createClient <span class="hljs-keyword">as</span> flashheart
+} <span class="hljs-keyword">from</span> <span class="hljs-string">'flashheart'</span>
+<span class="hljs-keyword">import</span> promiseSpool <span class="hljs-keyword">from</span> <span class="hljs-string">'promise-spool'</span>
+<span class="hljs-keyword">import</span> {
+  join
+} <span class="hljs-keyword">from</span> <span class="hljs-string">'path'</span>
+<span class="hljs-keyword">import</span> slugify <span class="hljs-keyword">from</span> <span class="hljs-string">'slugify'</span>
+<span class="hljs-keyword">import</span> Cache <span class="hljs-keyword">from</span> <span class="hljs-string">'./Cache'</span>
+
+<span class="hljs-keyword">const</span> dbg = debug(<span class="hljs-string">'metalsmith-contentful'</span>)
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="plugin">
+  <h3>
+    <a href="#plugin" name="plugin" class="pilcrow"></a>
+plugin
+  </h3>
+</div>
+<p>wrapper to expose plugin</p>
+</div>
+<div class="body">
+</div>
+<div class="details">
+<div class="dox_tag_title">Params</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">options</span>
+<span class="dox_type">Object</span>
+</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">options.srcId</span>
+<span class="dox_type">String</span>
+<span>classeur folder id
+</span>
+</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">options.destPath</span>
+<span class="dox_type">String</span>
+<span>path under which to place files
+</span>
+</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">options.userId</span>
+<span class="dox_type">Object</span>
+</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">options.apiKey</span>
+<span class="dox_type">String</span>
+</div>
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript"><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">plugin</span> (<span class="hljs-params">opt</span>) </span>{
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-3" id="section-3"></a>
+</div>
+<p>if (options.cache !== undefined) cache = options.cache</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  <span class="hljs-keyword">const</span> folder = <span class="hljs-keyword">new</span> Space(opt)
+  <span class="hljs-keyword">return</span> folder.contentful.bind(folder)
+}
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Space</span> </span>{
+  <span class="hljs-keyword">constructor</span> (opt) {
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-4" id="section-4"></a>
+</div>
+<p>sanitise &amp; store opt</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">    <span class="hljs-keyword">let</span> err
+    <span class="hljs-keyword">if</span> (!opt) err = <span class="hljs-string">'no options passed'</span>
+    <span class="hljs-keyword">if</span> (!opt.space) err = <span class="hljs-string">'required option: space'</span>
+    <span class="hljs-keyword">if</span> (!opt.accessToken) err = <span class="hljs-string">'required option: opt.accessToken'</span>
+    <span class="hljs-keyword">if</span> (!opt.resolveDepth) opt.resolveDepth = <span class="hljs-number">2</span>
+    <span class="hljs-keyword">if</span> (opt.files) {
+      <span class="hljs-keyword">if</span> (!opt.files.coerce) opt.files.coerce = <span class="hljs-function">(<span class="hljs-params">file</span>) =&gt;</span> file
+      <span class="hljs-keyword">if</span> (!opt.files.destPath) err = <span class="hljs-string">'required option: files.destPath'</span>
+      <span class="hljs-keyword">if</span> (!opt.files.contentType) err = <span class="hljs-string">'required option: files.contentType'</span>
+    }
+    <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(err)
+    <span class="hljs-keyword">this</span>.opt = opt
+    <span class="hljs-keyword">this</span>.cache = <span class="hljs-keyword">new</span> Cache(<span class="hljs-keyword">this</span>.opt)
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-5" id="section-5"></a>
+</div>
+<p>initialise contentful client</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">    <span class="hljs-keyword">this</span>.client = flashheart({
+      <span class="hljs-attr">defaults</span>: {<span class="hljs-attr">qs</span>: {<span class="hljs-attr">access_token</span>: opt.accessToken}}
+    })
+  }
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="contentful">
+  <h2>
+    <a href="#contentful" name="contentful" class="pilcrow"></a>
+contentful
+  </h2>
+</div>
+<p>this is the plugin function exposed to metalsmith</p>
+</div>
+<div class="body">
+</div>
+<div class="details">
+<div class="dox_tag_title">Params</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">files</span>
+<span class="dox_type">Object</span>
+<span>metalsmith files structure
+</span>
+</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">metalsmith</span>
+<span class="dox_type">Object</span>
+</div>
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  contentful (files, metalsmith) {
+    <span class="hljs-keyword">this</span>.files = files
+    <span class="hljs-keyword">this</span>.metalsmith = metalsmith
+    <span class="hljs-keyword">return</span> vow.resolve()
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.cache.invalidate())
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.scrape())
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.applyMeta())
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.makeFiles())
+    .catch(<span class="hljs-function">(<span class="hljs-params">err</span>) =&gt;</span> {
+      dbg(err)
+    })
+  }
+  fetch (url, query) {
+    <span class="hljs-keyword">let</span> defer = vow.defer()
+    <span class="hljs-keyword">this</span>.client.get(
+      <span class="hljs-string">`https://cdn.contentful.com/<span class="hljs-subst">${url}</span>`</span>,
+      query,
+      (err, res) =&gt; {
+        <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
+        defer.resolve(res)
+      }
+    )
+    <span class="hljs-keyword">return</span> defer.promise()
+  }
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="scrape">
+  <h2>
+    <a href="#scrape" name="scrape" class="pilcrow"></a>
+scrape
+  </h2>
+</div>
+<p>retrieve data from api and store in cache</p>
+</div>
+<div class="body">
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  scrape () {
+    <span class="hljs-keyword">return</span> vow.resolve()
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.count()
+      .then(<span class="hljs-function">(<span class="hljs-params">count</span>) =&gt;</span> {
+        <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.opt.cache &amp;&amp; count) {
+          dbg(<span class="hljs-string">'skipping request, read from cache'</span>)
+          <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'cache only'</span>)
+        } <span class="hljs-keyword">else</span> {
+          dbg(<span class="hljs-string">'populate cache'</span>)
+        }
+      })
+    })
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.retrieve(<span class="hljs-string">'content_types'</span>))
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.retrieve(<span class="hljs-string">'entries'</span>))
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.retrieve(<span class="hljs-string">'assets'</span>))
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+      <span class="hljs-keyword">this</span>.cache.count()
+      .then(<span class="hljs-function">(<span class="hljs-params">count</span>) =&gt;</span> dbg(<span class="hljs-string">`retrieved <span class="hljs-subst">${count}</span> items`</span>))
+    })
+    .catch(<span class="hljs-function">(<span class="hljs-params">err</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (err.message === <span class="hljs-string">'cache only'</span>) <span class="hljs-keyword">return</span>
+    })
+  }
+  retrieve (endpoint) {
+    <span class="hljs-keyword">return</span> promiseSpool({
+      <span class="hljs-attr">fetch</span>: <span class="hljs-function">(<span class="hljs-params">retrieved</span>) =&gt;</span> {
+        <span class="hljs-keyword">let</span> url = <span class="hljs-string">`/spaces/<span class="hljs-subst">${<span class="hljs-keyword">this</span>.opt.space}</span>/<span class="hljs-subst">${endpoint}</span>`</span>
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.fetch(url, {<span class="hljs-attr">qs</span>: {<span class="hljs-attr">skip</span>: retrieved}})
+        .then(<span class="hljs-function">(<span class="hljs-params">res</span>) =&gt;</span> {
+          <span class="hljs-keyword">if</span> (retrieved + res.items.length &gt;= res.total) res.items.push(<span class="hljs-literal">null</span>)
+          <span class="hljs-keyword">return</span> res.items
+        })
+      },
+      <span class="hljs-attr">worker</span>: <span class="hljs-keyword">this</span>.cache.upsert.bind(<span class="hljs-keyword">this</span>.cache),
+      <span class="hljs-attr">concurrency</span>: <span class="hljs-keyword">this</span>.concurrency
+    })
+  }
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="coerce">
+  <h2>
+    <a href="#coerce" name="coerce" class="pilcrow"></a>
+coerce
+  </h2>
+</div>
+<p>translate entry from contentful to something more metalsmith</p>
+</div>
+<div class="body">
+</div>
+<div class="details">
+<div class="dox_tag_title">Params</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">file</span>
+<span class="dox_type">Object</span>
+<span><ul>
+<li>entry from contentful</li>
+</ul>
+</span>
+</div>
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  coerce (file) {
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-9" id="section-9"></a>
+</div>
+<p>the contentful example spaces use <code>body</code> for <code>content</code></p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">    file.content = file.body ? Buffer.from(file.body) : Buffer.from(<span class="hljs-string">''</span>)
+    file.slug = slugify(file.title, {<span class="hljs-attr">lower</span>: <span class="hljs-literal">true</span>})
+    file.path = join(<span class="hljs-keyword">this</span>.opt.files.destPath, file.slug)
+    file = <span class="hljs-keyword">this</span>.opt.files.coerce(file)
+    <span class="hljs-keyword">return</span> file
+  }
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="mergecache">
+  <h2>
+    <a href="#mergecache" name="mergecache" class="pilcrow"></a>
+mergeCache
+  </h2>
+</div>
+<p>pull everything from cache into metalsmith files structure</p>
+</div>
+<div class="body">
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  makeFiles () {
+    <span class="hljs-keyword">if</span> (!<span class="hljs-keyword">this</span>.opt.files) <span class="hljs-keyword">return</span>
+    <span class="hljs-keyword">let</span> defer = vow.defer()
+    <span class="hljs-keyword">let</span> meta = <span class="hljs-keyword">this</span>.metalsmith.metadata().contentful
+    <span class="hljs-keyword">let</span> query = {
+      <span class="hljs-string">'sys.type'</span>: <span class="hljs-string">'ContentType'</span>,
+      <span class="hljs-string">'name'</span>: <span class="hljs-keyword">this</span>.opt.files.contentType
+    }
+    <span class="hljs-keyword">this</span>.cache.db.findOne(query, (err, contentType) =&gt; {
+      <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
+      <span class="hljs-keyword">let</span> query = {<span class="hljs-string">'sys.contentType.sys.id'</span>: contentType.sys.id}
+      <span class="hljs-keyword">this</span>.cache.db.find(query, (err, docs) =&gt; {
+        <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
+        docs.forEach(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> {
+          <span class="hljs-keyword">let</span> file = <span class="hljs-keyword">this</span>.coerce(meta[doc.sys.id])
+          file = <span class="hljs-keyword">this</span>.coerce(file)
+          <span class="hljs-keyword">this</span>.files[file.path] = file
+        })
+        dbg(<span class="hljs-string">`created <span class="hljs-subst">${docs.length}</span> files`</span>)
+        defer.resolve()
+      })
+    })
+    <span class="hljs-keyword">return</span> defer.promise()
+  }
+  applyMeta () {
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.getCollection({}, <span class="hljs-keyword">this</span>.opt.resolveDepth)
+    .then(<span class="hljs-function">(<span class="hljs-params">entries</span>) =&gt;</span> {
+      <span class="hljs-keyword">this</span>.metalsmith.metadata().contentful = entries
+      dbg(<span class="hljs-string">`added <span class="hljs-subst">${<span class="hljs-built_in">Object</span>.keys(entries).length}</span> items to meta`</span>)
+    })
+  }
+
+}
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> plugin
+<span class="hljs-keyword">export</span> {
+  plugin
+}
+
+</pre>
+        </td>
+      </tr>
+    
+  </tbody>
+</table>
+
+  </div>
+</body>
+</html>

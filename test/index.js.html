@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>index.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="../doc-style.css" />
+  <script src="../doc-filelist.js"></script>
+  <script>
+    var relativeDir = "../";
+    var thisFile = "test/index.js";
+    var defaultSidebar = true;
+  </script>
+  <script src="../doc-script.js"></script>
+
+</head>
+<body>
+  <div id="sidebar_wrapper">
+    <div id="sidebar_switch">
+      <span class="tree">Files</span>
+      <span class="headings">Headings</span>
+    </div>
+    <div id="tree"></div>
+    <div id="headings">
+
+    </div>
+  </div>
+  <div id="sidebar-toggle"></div>
+  <div id="container">
+    <div class="background highlight"></div>
+<table cellpadding="0" cellspacing="0">
+  <tbody>
+    
+      <tr>
+        <td class="docs">
+          <h1>index.js</h1>
+        </td>
+        <td class="code highlight"></td>
+      </tr>
+    
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-1" id="section-1"></a>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript"><span class="hljs-keyword">import</span> contentful <span class="hljs-keyword">from</span> <span class="hljs-string">'../lib'</span>
+<span class="hljs-keyword">import</span> {
+  back <span class="hljs-keyword">as</span> nockBack
+} <span class="hljs-keyword">from</span> <span class="hljs-string">'nock'</span>
+<span class="hljs-keyword">import</span> config <span class="hljs-keyword">from</span> <span class="hljs-string">'config'</span>
+<span class="hljs-keyword">import</span> Metalsmith <span class="hljs-keyword">from</span> <span class="hljs-string">'metalsmith'</span>
+<span class="hljs-keyword">import</span> assert <span class="hljs-keyword">from</span> <span class="hljs-string">'assert'</span>
+<span class="hljs-keyword">import</span> debug <span class="hljs-keyword">from</span> <span class="hljs-string">'debug'</span>
+<span class="hljs-keyword">import</span> { createClient } <span class="hljs-keyword">from</span> <span class="hljs-string">'contentful'</span>
+<span class="hljs-keyword">const</span> dbg = debug(<span class="hljs-string">'metalsmith-contentful'</span>)
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-2" id="section-2"></a>
+</div>
+<p>import debug from 'debug'
+const dbg = debug('metalsmith-google-drive')</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">
+nockBack.setMode(<span class="hljs-string">'record'</span>)
+nockBack.fixtures = <span class="hljs-string">'test/fixtures/scrape'</span>
+
+describe(<span class="hljs-string">'metalsmith-contentful'</span>, () =&gt; {
+  beforeEach(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-3" id="section-3"></a>
+</div>
+<p>create spy
+sinon.spy(cloudinary.api, 'resources')</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  })
+  afterEach(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-4" id="section-4"></a>
+</div>
+<p>cloudinary.api.resources.restore()</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  })
+  it(<span class="hljs-string">'should be able to scrape a space'</span>, (done) =&gt; {
+    nockBack(<span class="hljs-string">'scrape'</span>, (writeRequests) =&gt; {
+      Metalsmith(<span class="hljs-string">'test/fixtures/scrape'</span>)
+      .use(contentful(<span class="hljs-built_in">Object</span>.assign(
+        {
+          <span class="hljs-attr">files</span>: {
+            <span class="hljs-attr">destPath</span>: <span class="hljs-string">'articles'</span>,
+            <span class="hljs-attr">contentType</span>: <span class="hljs-string">'Post'</span>
+          },
+          <span class="hljs-attr">cache</span>: <span class="hljs-string">'invalidate'</span>
+        },
+        config.get(<span class="hljs-string">'metalsmith-contentful'</span>)
+      )))
+      .use(<span class="hljs-function">(<span class="hljs-params">files, metalsmith</span>) =&gt;</span> {
+        <span class="hljs-keyword">let</span> file = files[<span class="hljs-string">'articles/seven-tips-from-ernest-hemingway-on-how-to-write-fiction'</span>]
+        assert.ok(file)
+        assert.equal(file.category[<span class="hljs-number">0</span>].title, <span class="hljs-string">'Literature'</span>) <span class="hljs-comment">// resolved</span>
+        assert.ok(<span class="hljs-built_in">Object</span>.keys(metalsmith.metadata().contentful).length)
+      })
+      .build(<span class="hljs-function">(<span class="hljs-params">err, files</span>) =&gt;</span> {
+        <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> done(err)
+        writeRequests()
+        done()
+      })
+    })
+  }).timeout(<span class="hljs-number">0</span>)
+})
+
+</pre>
+        </td>
+      </tr>
+    
+  </tbody>
+</table>
+
+  </div>
+</body>
+</html>

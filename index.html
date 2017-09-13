@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>README.md</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="doc-style.css" />
+  <script src="doc-filelist.js"></script>
+  <script>
+    var relativeDir = "";
+    var thisFile = "README.md";
+    var defaultSidebar = true;
+  </script>
+  <script src="doc-script.js"></script>
+
+</head>
+<body>
+  <div id="sidebar_wrapper">
+    <div id="sidebar_switch">
+      <span class="tree">Files</span>
+      <span class="headings">Headings</span>
+    </div>
+    <div id="tree"></div>
+    <div id="headings">
+
+      <div class="heading h1">
+        <a href="#metalsmith-contentful">metalsmith-contentful</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#motivation">motivation</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#install">install</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#overview">overview</a>
+      </div>
+
+      <div class="heading h3">
+        <a href="#example">example</a>
+      </div>
+
+      <div class="heading h3">
+        <a href="#options">options</a>
+      </div>
+
+      <div class="heading h3">
+        <a href="#cache">cache</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#author">Author</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#contributing">Contributing</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#license">License</a>
+      </div>
+
+    </div>
+  </div>
+  <div id="sidebar-toggle"></div>
+  <div id="container">
+    <div class="docs markdown"><div class="pilwrap" id="metalsmith-contentful">
+  <h1>
+    <a href="#metalsmith-contentful" name="metalsmith-contentful" class="pilcrow"></a>
+metalsmith-contentful
+  </h1>
+</div>
+<p><img src="https://nodei.co/npm/metalsmith-contentful.png?downloads=true&amp;downloadRank=true&amp;stars=true" alt="nodei.co"> <img src="https://img.shields.io/npm/v/metalsmith-contentful.svg" alt="npm"> <img src="https://img.shields.io/github/issues/leviwheatcroft/metalsmith-contentful.svg" alt="github-issues"> <img src="https://img.shields.io/github/stars/leviwheatcroft/metalsmith-contentful.svg" alt="stars"> <img src="https://img.shields.io/github/forks/leviwheatcroft/metalsmith-contentful.svg" alt="forks"></p>
+<p><a href="https://metalsmith.io">metalsmith</a> plugin to scrape content from contentful</p>
+<p>This is not the official <a href="https://github.com/contentful/contentful-metalsmith" title="official contentful-metalsmith plugin">contentful-metalsmith</a> plugin.</p>
+<p>Highlights:</p>
+<ul>
+<li>caches contentful data</li>
+<li>query from metalsmith build call, not from file yaml meta</li>
+</ul>
+<p>See the <a href="https://leviwheatcroft.github.io/metalsmith-contentful" title="fancy annotated source">annotated source</a> or <a href="https://github.com/leviwheatcroft/metalsmith-contentful" title="github repo">github repo</a></p>
+<div class="pilwrap" id="motivation">
+  <h2>
+    <a href="#motivation" name="motivation" class="pilcrow"></a>
+motivation
+  </h2>
+</div>
+<p>I really need caching from remote apis to speed up the metalsmith build
+process. I couldn't see a way to modify the official plugin to support caching
+so made something from scratch.</p>
+<div class="pilwrap" id="install">
+  <h2>
+    <a href="#install" name="install" class="pilcrow"></a>
+install
+  </h2>
+</div>
+<p><code>npm i --save github:leviwheatcroft/metalsmith-contentful</code></p>
+<div class="pilwrap" id="overview">
+  <h2>
+    <a href="#overview" name="overview" class="pilcrow"></a>
+overview
+  </h2>
+</div>
+<p>A contentful space contains <code>entries</code> as defined by <code>content_types</code>, and
+<code>assets</code> for images or whatever. This plugin scrapes <em>all</em> these things from
+a given space, and exposes it at <code>metalsmith.metadata().contentful</code> in an object
+keyed by contentful id.</p>
+<p>You can create files in the metalsmith array. Presently you can only do this
+for all entries of a given <code>contentType</code>.</p>
+<div class="pilwrap" id="example">
+  <h3>
+    <a href="#example" name="example" class="pilcrow"></a>
+example
+  </h3>
+</div>
+<pre><code class="javascript">Metalsmith(<span class="hljs-string">'src'</span>)
+.use(
+  contentful({
+    <span class="hljs-attr">space</span>: <span class="hljs-string">'aH7WHo2HQFrX5CHbGZx4'</span>,
+    <span class="hljs-attr">accessToken</span>: <span class="hljs-string">'9aXKQnP2UjjEeSSUcyGCMAOhnm4Vsf8u'</span>,
+    <span class="hljs-attr">files</span>: {
+      <span class="hljs-attr">destPath</span>: <span class="hljs-string">'articles'</span>,
+      <span class="hljs-attr">contentType</span>: <span class="hljs-string">'Post'</span>
+      coerce: <span class="hljs-function">(<span class="hljs-params">file, contentful</span>) =&gt;</span> {
+        file.author = contentful.author || <span class="hljs-string">'Team'</span>
+      }
+    },
+    <span class="hljs-attr">resolveDepth</span>: <span class="hljs-number">2</span>,
+    <span class="hljs-attr">cache</span>: process.env[<span class="hljs-string">'NODE_ENV'</span>] === <span class="hljs-string">'production'</span> ? <span class="hljs-string">'invalidate'</span> : <span class="hljs-literal">true</span>
+  })
+)
+.build( ... )
+</code></pre>
+<div class="pilwrap" id="options">
+  <h3>
+    <a href="#options" name="options" class="pilcrow"></a>
+options
+  </h3>
+</div>
+<ul>
+<li><code>space</code> {String} (required) id of contentful space you wish to scrape</li>
+<li><code>destPath</code> {String} (required) the path under which you want to place the scraped files</li>
+<li><code>accessToken</code> {String} (required) contentful accessToken</li>
+<li><code>query</code> {Object} contentful api query, to filter results</li>
+<li><code>parse</code> {Function} function to convert contentful result to metalsmith file</li>
+<li><code>cache</code> {Boolean|&quot;invalidate&quot;} cache mode</li>
+</ul>
+<div class="pilwrap" id="cache">
+  <h3>
+    <a href="#cache" name="cache" class="pilcrow"></a>
+cache
+  </h3>
+</div>
+<p>several modes:</p>
+<ul>
+<li><code>undefined</code> (default) - request files changed since last run</li>
+<li><code>true</code> - if cache exists, don't issue any requests.</li>
+<li><code>&quot;invalidate&quot;</code> - destroy existing cache.</li>
+</ul>
+<div class="pilwrap" id="author">
+  <h2>
+    <a href="#author" name="author" class="pilcrow"></a>
+Author
+  </h2>
+</div>
+<p>Levi Wheatcroft <a href="mailto:levi@wht.cr.html">levi@wht.cr</a></p>
+<div class="pilwrap" id="contributing">
+  <h2>
+    <a href="#contributing" name="contributing" class="pilcrow"></a>
+Contributing
+  </h2>
+</div>
+<p>Contributions welcome; Please submit all pull requests against the master
+branch.</p>
+<div class="pilwrap" id="license">
+  <h2>
+    <a href="#license" name="license" class="pilcrow"></a>
+License
+  </h2>
+</div>
+<ul>
+<li><strong>MIT</strong> : http://opensource.org/licenses/MIT</li>
+</ul>
+</div>
+  </div>
+</body>
+</html>
