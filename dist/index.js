@@ -142,7 +142,7 @@ class Space {
     if (file.contents) file.contents = Buffer.from(file.contents);
     Object.keys(file).forEach(key => {
       if (typeof file[key] !== 'string') return;
-      let date = (0, _moment2.default)(file[key]);
+      let date = (0, _moment2.default)(file[key], _moment2.default.ISO_8601, true);
       if (!date.isValid()) return;
       file[key] = date;
     });
