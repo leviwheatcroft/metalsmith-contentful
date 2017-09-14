@@ -364,7 +364,7 @@ coerce
     <span class="hljs-keyword">if</span> (file.contents) file.contents = Buffer.from(file.contents)
     <span class="hljs-built_in">Object</span>.keys(file).forEach(<span class="hljs-function">(<span class="hljs-params">key</span>) =&gt;</span> {
       <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> file[key] !== <span class="hljs-string">'string'</span>) <span class="hljs-keyword">return</span>
-      <span class="hljs-keyword">let</span> date = moment(file[key])
+      <span class="hljs-keyword">let</span> date = moment(file[key], moment.ISO_8601, <span class="hljs-literal">true</span>)
       <span class="hljs-keyword">if</span> (!date.isValid()) <span class="hljs-keyword">return</span>
       file[key] = date
     })
