@@ -29,6 +29,10 @@ var _Cache = require('./Cache');
 
 var _Cache2 = _interopRequireDefault(_Cache);
 
+var _moment = require('moment');
+
+var _moment2 = _interopRequireDefault(_moment);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 const dbg = (0, _debug2.default)('metalsmith-contentful');
@@ -134,7 +138,14 @@ class Space {
    */
   coerce(file) {
     // the contentful example spaces use `body` for `content`
-    file.content = file.body ? Buffer.from(file.body) : Buffer.from('');
+    if (!file.contents && file.body) file.content = file.body;
+    if (file.contents) file.contents = Buffer.from(file.contents);
+    Object.keys(file).forEach(key => {
+      if (typeof file[key] !== 'string') return;
+      let date = (0, _moment2.default)(file[key]);
+      if (!date.isValid()) return;
+      file[key] = date;
+    });
     file.slug = (0, _slugify2.default)(file.title, { lower: true });
     file.path = (0, _path.join)(this.opt.files.destPath, file.slug);
     file = this.opt.files.coerce(file);
@@ -155,6 +166,9 @@ class Space {
     };
     this.cache.db.findOne(query, (err, contentType) => {
       if (err) return defer.reject(err);
+      if (!contentType) {
+        return defer.reject(`no content type ${this.opt.files.contentType}`);
+      }
       let query = { 'sys.contentType.sys.id': contentType.sys.id };
       this.cache.db.find(query, (err, docs) => {
         if (err) return defer.reject(err);

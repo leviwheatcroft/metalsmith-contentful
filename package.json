@@ -42,6 +42,7 @@
     "debug": "^2.6.8",
     "flashheart": "^2.9.0",
     "metalsmith-cache": "^1.1.0",
+    "moment": "^2.18.1",
     "nedb": "^1.8.0",
     "promise-spool": "^1.0.6",
     "slugify": "^1.2.1",

@@ -18,7 +18,9 @@ var _promiseSpool2 = _interopRequireDefault(_promiseSpool);
 
 var _path = require('path');
 
-var _fs = require('fs');
+var _appRootPath = require('app-root-path');
+
+var _appRootPath2 = _interopRequireDefault(_appRootPath);
 
 var _nedb = require('nedb');
 
@@ -32,10 +34,7 @@ class Cache {
   constructor(options) {
     if (!options.space) throw new Error('required: options.space');
     this.opt = options;
-    let path = (0, _path.resolve)(__dirname, 'cache', `${options.space}.db`);
-    if ((0, _fs.existsSync)(path) && this.cache !== 'invalidate') {
-      this.lastUpdated = (0, _fs.statSync)(path).mtime.toISOString();
-    }
+    let path = (0, _path.resolve)(_appRootPath2.default.path, 'cache', `contentful-${options.space}.db`);
     this.db = new _nedb2.default(path);
     this.db.loadDatabase();
   }
@@ -87,7 +86,7 @@ class Cache {
       return collection;
     });
   }
-  resolve(fields, depth = 1) {
+  resolve(fields, depth = 2) {
     let resolvers = [];
     Object.keys(fields).forEach(key => {
       if (key === 'sys') return;
