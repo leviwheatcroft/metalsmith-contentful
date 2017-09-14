@@ -77,6 +77,7 @@
 } <span class="hljs-keyword">from</span> <span class="hljs-string">'path'</span>
 <span class="hljs-keyword">import</span> slugify <span class="hljs-keyword">from</span> <span class="hljs-string">'slugify'</span>
 <span class="hljs-keyword">import</span> Cache <span class="hljs-keyword">from</span> <span class="hljs-string">'./Cache'</span>
+<span class="hljs-keyword">import</span> moment <span class="hljs-keyword">from</span> <span class="hljs-string">'moment'</span>
 
 <span class="hljs-keyword">const</span> dbg = debug(<span class="hljs-string">'metalsmith-contentful'</span>)
 
@@ -359,8 +360,14 @@ coerce
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">    <span class="hljs-keyword">if</span> (!file.content &amp;&amp; file.body) file.content = file.body
-    file.content = Buffer.from(file.content)
+          <pre class="javascript">    <span class="hljs-keyword">if</span> (!file.contents &amp;&amp; file.body) file.content = file.body
+    <span class="hljs-keyword">if</span> (file.contents) file.contents = Buffer.from(file.contents)
+    <span class="hljs-built_in">Object</span>.keys(file).forEach(<span class="hljs-function">(<span class="hljs-params">key</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> file[key] !== <span class="hljs-string">'string'</span>) <span class="hljs-keyword">return</span>
+      <span class="hljs-keyword">let</span> date = moment(file[key])
+      <span class="hljs-keyword">if</span> (!date.isValid()) <span class="hljs-keyword">return</span>
+      file[key] = date
+    })
     file.slug = slugify(file.title, {<span class="hljs-attr">lower</span>: <span class="hljs-literal">true</span>})
     file.path = join(<span class="hljs-keyword">this</span>.opt.files.destPath, file.slug)
     file = <span class="hljs-keyword">this</span>.opt.files.coerce(file)
