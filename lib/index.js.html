@@ -359,7 +359,8 @@ coerce
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">    file.content = file.body ? Buffer.from(file.body) : Buffer.from(<span class="hljs-string">''</span>)
+          <pre class="javascript">    <span class="hljs-keyword">if</span> (!file.content &amp;&amp; file.body) file.content = file.body
+    file.content = Buffer.from(file.content)
     file.slug = slugify(file.title, {<span class="hljs-attr">lower</span>: <span class="hljs-literal">true</span>})
     file.path = join(<span class="hljs-keyword">this</span>.opt.files.destPath, file.slug)
     file = <span class="hljs-keyword">this</span>.opt.files.coerce(file)
@@ -398,6 +399,9 @@ mergeCache
     }
     <span class="hljs-keyword">this</span>.cache.db.findOne(query, (err, contentType) =&gt; {
       <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
+      <span class="hljs-keyword">if</span> (!contentType) {
+        <span class="hljs-keyword">return</span> defer.reject(<span class="hljs-string">`no content type <span class="hljs-subst">${<span class="hljs-keyword">this</span>.opt.files.contentType}</span>`</span>)
+      }
       <span class="hljs-keyword">let</span> query = {<span class="hljs-string">'sys.contentType.sys.id'</span>: contentType.sys.id}
       <span class="hljs-keyword">this</span>.cache.db.find(query, (err, docs) =&gt; {
         <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
