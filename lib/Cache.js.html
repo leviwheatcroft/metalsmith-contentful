@@ -26,6 +26,42 @@
         <a href="#invalidate">invalidate</a>
       </div>
 
+      <div class="heading h2">
+        <a href="#count">count</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#upsert">upsert</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#findresolved">findResolved</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#findoneresolved">findOneResolved</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#find">find</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#findone">findOne</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#resolvecollection">resolveCollection</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#resolve">resolve</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#byid">byId</a>
+      </div>
+
     </div>
   </div>
   <div id="sidebar-toggle"></div>
@@ -61,10 +97,10 @@
 <span class="hljs-keyword">const</span> dbg = debug(<span class="hljs-string">'metalsmith-contentful'</span>)
 
 <span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Cache</span> </span>{
-  <span class="hljs-keyword">constructor</span> (options) {
-    <span class="hljs-keyword">if</span> (!options.space) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'required: options.space'</span>)
-    <span class="hljs-keyword">this</span>.opt = options
-    <span class="hljs-keyword">let</span> path = resolve(appRoot.path, <span class="hljs-string">'cache'</span>, <span class="hljs-string">`contentful-<span class="hljs-subst">${options.space}</span>.db`</span>)
+  <span class="hljs-keyword">constructor</span> (opt) {
+    <span class="hljs-keyword">if</span> (!opt.space) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'required: options.space'</span>)
+    <span class="hljs-keyword">this</span>.opt = opt
+    <span class="hljs-keyword">let</span> path = resolve(appRoot.path, <span class="hljs-string">'cache'</span>, <span class="hljs-string">`contentful-<span class="hljs-subst">${opt.space}</span>.db`</span>)
     <span class="hljs-keyword">this</span>.db = <span class="hljs-keyword">new</span> Nedb(path)
     <span class="hljs-keyword">this</span>.db.loadDatabase()
   }
@@ -98,7 +134,70 @@ invalidate
       <span class="hljs-keyword">return</span> defer.promise()
     }
   }
-  count () {
+  requestOrCache () {
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.count()
+    .then(<span class="hljs-function">(<span class="hljs-params">count</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.opt.cache &amp;&amp; count) {
+        dbg(<span class="hljs-string">'skipping request, read from cache'</span>)
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'cache only'</span>)
+      } <span class="hljs-keyword">else</span> {
+        dbg(<span class="hljs-string">'populate cache'</span>)
+      }
+    })
+  }
+  resolveContentTypes () {
+    <span class="hljs-keyword">let</span> defer = vow.defer()
+    <span class="hljs-keyword">this</span>.db.find({<span class="hljs-string">'sys.type'</span>: <span class="hljs-string">'Entry'</span>}, (err, docs) =&gt; {
+      <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
+      docs.push(<span class="hljs-literal">null</span>)
+      promiseSpool({
+        <span class="hljs-attr">fetch</span>: <span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> vow.resolve(docs),
+        <span class="hljs-attr">worker</span>: <span class="hljs-function">(<span class="hljs-params">entry</span>) =&gt;</span> {
+          <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.findOne({<span class="hljs-string">'sys.id'</span>: entry.sys.contentType.sys.id})
+          .then(<span class="hljs-function">(<span class="hljs-params">contentType</span>) =&gt;</span> {
+            entry.sys.contentType = contentType
+            <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.upsert(entry)
+          })
+        },
+        <span class="hljs-attr">concurrency</span>: <span class="hljs-keyword">this</span>.opt.concurrency
+      })
+      .then(defer.resolve.bind(defer))
+    })
+    <span class="hljs-keyword">return</span> defer.promise()
+  }
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="count">
+  <h2>
+    <a href="#count" name="count" class="pilcrow"></a>
+count
+  </h2>
+</div>
+<p>count cache contents</p>
+</div>
+<div class="body">
+</div>
+<div class="details">
+<div class="dox_tag_title">Returns</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name"></span>
+<span class="dox_type">Promise.&lt;Number&gt;</span>
+<span>resolves to number of items in cache
+</span>
+</div>
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  count () {
     <span class="hljs-keyword">let</span> defer = vow.defer()
     <span class="hljs-keyword">this</span>.db.count({}, (err, count) =&gt; {
       <span class="hljs-keyword">if</span> (err) defer.reject(err)
@@ -106,7 +205,42 @@ invalidate
     })
     <span class="hljs-keyword">return</span> defer.promise()
   }
-  upsert (doc) {
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="upsert">
+  <h2>
+    <a href="#upsert" name="upsert" class="pilcrow"></a>
+upsert
+  </h2>
+</div>
+<p>create or update doc in cache. Works for <code>ContentType</code>, <code>Asset</code>, or <code>Entry</code></p>
+</div>
+<div class="body">
+</div>
+<div class="details">
+<div class="dox_tag_title">Params</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">doc</span>
+<span class="dox_type">Object</span>
+</div>
+<div class="dox_tag_title">Returns</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name"></span>
+<span class="dox_type">Promise</span>
+</div>
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  upsert (doc) {
     <span class="hljs-keyword">let</span> defer = vow.defer()
     <span class="hljs-keyword">this</span>.db.update(
       {<span class="hljs-string">'sys.id'</span>: doc.sys.id},
@@ -116,75 +250,318 @@ invalidate
     )
     <span class="hljs-keyword">return</span> defer.promise()
   }
-  getCollection (query = {}, resolveDepth = <span class="hljs-number">1</span>) {
-    <span class="hljs-keyword">let</span> collection = {}
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="findresolved">
+  <h2>
+    <a href="#findresolved" name="findresolved" class="pilcrow"></a>
+findResolved
+  </h2>
+</div>
+<p>wrapper for find &amp; resolveCollection combo</p>
+</div>
+<div class="body">
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  findResolved (query, resolveDepth, callback) {
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.find(query)
+    .then(<span class="hljs-function">(<span class="hljs-params">docs</span>) =&gt;</span> <span class="hljs-keyword">this</span>.resolveCollection(docs, resolveDepth))
+    .then(<span class="hljs-function">(<span class="hljs-params">docs</span>) =&gt;</span> {
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-6" id="section-6"></a>
+</div>
+<p>half assed callback implementation for numpties</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">      <span class="hljs-keyword">if</span> (callback) process.nextTick(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> callback(docs))
+      <span class="hljs-keyword">return</span> docs
+    })
+  }
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="findoneresolved">
+  <h2>
+    <a href="#findoneresolved" name="findoneresolved" class="pilcrow"></a>
+findOneResolved
+  </h2>
+</div>
+<p>wrapper for findOne &amp; resolve combo</p>
+</div>
+<div class="body">
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  findOneResolved (query, resolveDepth, callback) {
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.findOne(query)
+    .then(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> <span class="hljs-keyword">this</span>.resolve(doc, resolveDepth))
+    .then(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (callback) process.nextTick(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> callback(doc))
+      <span class="hljs-keyword">return</span> doc
+    })
+  }
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="find">
+  <h2>
+    <a href="#find" name="find" class="pilcrow"></a>
+find
+  </h2>
+</div>
+<p>query cache for single doc</p>
+</div>
+<div class="body">
+</div>
+<div class="details">
+<div class="dox_tag_title">Params</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">query</span>
+<span class="dox_type">Object</span>
+<span>a nedb query (see readme)
+</span>
+</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">callback</span>
+<span class="dox_type">Function</span>
+</div>
+<div class="dox_tag_title">Returns</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name"></span>
+<span class="dox_type">Promise.&lt;Object&gt;</span>
+<span>resolves to doc
+</span>
+</div>
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  find (query) {
+    <span class="hljs-keyword">let</span> defer = vow.defer()
+    <span class="hljs-keyword">this</span>.db.find(query, (err, docs) =&gt; {
+      <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
+      defer.resolve(docs)
+    })
+    <span class="hljs-keyword">return</span> defer.promise()
+  }
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="findone">
+  <h2>
+    <a href="#findone" name="findone" class="pilcrow"></a>
+findOne
+  </h2>
+</div>
+<p>query cache for single doc</p>
+</div>
+<div class="body">
+</div>
+<div class="details">
+<div class="dox_tag_title">Params</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">query</span>
+<span class="dox_type">Object</span>
+<span>a nedb query (see readme)
+</span>
+</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">callback</span>
+<span class="dox_type">Function</span>
+</div>
+<div class="dox_tag_title">Returns</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name"></span>
+<span class="dox_type">Promise.&lt;Object&gt;</span>
+<span>resolves to doc
+</span>
+</div>
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  findOne (query) {
+    <span class="hljs-keyword">let</span> defer = vow.defer()
+    <span class="hljs-keyword">this</span>.db.findOne(query, (err, doc) =&gt; {
+      <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
+      defer.resolve(doc)
+    })
+    <span class="hljs-keyword">return</span> defer.promise()
+  }
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="resolvecollection">
+  <h2>
+    <a href="#resolvecollection" name="resolvecollection" class="pilcrow"></a>
+resolveCollection
+  </h2>
+</div>
+<p>supervisor for resolve</p>
+</div>
+<div class="body">
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  resolveCollection (docs, depth) {
+    <span class="hljs-keyword">let</span> resolved = []
     <span class="hljs-keyword">return</span> promiseSpool({
-      <span class="hljs-attr">fetch</span>: <span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
-        <span class="hljs-keyword">let</span> defer = vow.defer()
-        <span class="hljs-keyword">this</span>.db.find(query, (err, docs) =&gt; {
-          <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
-</pre>
-        </td>
-      </tr>
-    
-      <tr>
-        <td class="docs">
-          <div class="pilwrap">
-  <a class="pilcrow" href="#section-3" id="section-3"></a>
-</div>
-<p>add null for end of data</p>
-
-        </td>
-        <td class="code highlight">
-          <pre class="javascript">          docs.push(<span class="hljs-literal">null</span>)
-</pre>
-        </td>
-      </tr>
-    
-      <tr>
-        <td class="docs">
-          <div class="pilwrap">
-  <a class="pilcrow" href="#section-4" id="section-4"></a>
-</div>
-<p>docs.forEach((doc) =&gt; dbg(doc.sys.contentType))</p>
-
-        </td>
-        <td class="code highlight">
-          <pre class="javascript">          defer.resolve(docs)
-        })
-        <span class="hljs-keyword">return</span> defer.promise()
-      },
+      <span class="hljs-attr">fetch</span>: <span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> vow.resolve([...docs, <span class="hljs-literal">null</span>]),
       <span class="hljs-attr">worker</span>: <span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> {
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.resolve(doc, resolveDepth)
-        .then(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> { collection[doc.sys.id] = doc.fields })
-      }
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.resolve(doc, depth)
+        .then(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> resolved.push(doc))
+      },
+      <span class="hljs-attr">concurrency</span>: <span class="hljs-number">2</span>
     })
-    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
-      <span class="hljs-keyword">return</span> collection
-    })
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> resolved)
   }
-  resolve (fields, depth = <span class="hljs-number">2</span>) {
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="resolve">
+  <h2>
+    <a href="#resolve" name="resolve" class="pilcrow"></a>
+resolve
+  </h2>
+</div>
+<p>recursive iterator to resolve links to other items in space</p>
+</div>
+<div class="body">
+</div>
+<div class="details">
+<div class="dox_tag_title">Params</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">doc</span>
+<span class="dox_type">Object</span>
+</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">depth</span>
+<span class="dox_type">Number</span>
+</div>
+<div class="dox_tag_title">Returns</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name"></span>
+<span class="dox_type">Promise.&lt;Object&gt;</span>
+<span>resolves to doc
+</span>
+</div>
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  resolve (doc, depth) {
     <span class="hljs-keyword">let</span> resolvers = []
-    <span class="hljs-built_in">Object</span>.keys(fields).forEach(<span class="hljs-function">(<span class="hljs-params">key</span>) =&gt;</span> {
+    <span class="hljs-built_in">Object</span>.keys(doc).forEach(<span class="hljs-function">(<span class="hljs-params">key</span>) =&gt;</span> {
       <span class="hljs-keyword">if</span> (key === <span class="hljs-string">'sys'</span>) <span class="hljs-keyword">return</span>
-      <span class="hljs-keyword">if</span> (fields[key] === <span class="hljs-literal">null</span>) <span class="hljs-keyword">return</span>
-      <span class="hljs-keyword">if</span> (fields[key].sys) {
+      <span class="hljs-keyword">if</span> (doc[key] === <span class="hljs-literal">null</span>) <span class="hljs-keyword">return</span>
+      <span class="hljs-keyword">if</span> (doc[key].sys) {
         resolvers.push(
-          <span class="hljs-keyword">this</span>.byId(fields[key].sys.id).then(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> {
-            fields[key] = doc.fields
+          <span class="hljs-keyword">this</span>.byId(doc[key].sys.id).then(<span class="hljs-function">(<span class="hljs-params">child</span>) =&gt;</span> {
+            doc[key] = child.fields
           })
         )
-      } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> fields[key] === <span class="hljs-string">'object'</span> &amp;&amp; depth) {
+      } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> doc[key] === <span class="hljs-string">'object'</span> &amp;&amp; depth) {
         resolvers.push(
-          <span class="hljs-keyword">this</span>.resolve(fields[key], depth - <span class="hljs-number">1</span>).then(<span class="hljs-function">(<span class="hljs-params">res</span>) =&gt;</span> {
-            fields[key] = res
+          <span class="hljs-keyword">this</span>.resolve(doc[key], depth - <span class="hljs-number">1</span>).then(<span class="hljs-function">(<span class="hljs-params">res</span>) =&gt;</span> {
+            doc[key] = res
           })
         )
       }
     })
-    <span class="hljs-keyword">return</span> vow.all(resolvers).then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> fields)
+    <span class="hljs-keyword">return</span> vow.all(resolvers).then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> doc)
   }
-  byId (id) {
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="byid">
+  <h2>
+    <a href="#byid" name="byid" class="pilcrow"></a>
+byId
+  </h2>
+</div>
+<p>helper for resolve to get item from cache by id</p>
+</div>
+<div class="body">
+</div>
+<div class="details">
+<div class="dox_tag_title">Params</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">id</span>
+<span class="dox_type">String</span>
+</div>
+<div class="dox_tag_title">Returns</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name"></span>
+<span class="dox_type">Promise.&lt;Object&gt;</span>
+<span>resolves to doc
+</span>
+</div>
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  byId (id) {
     <span class="hljs-keyword">let</span> defer = vow.defer()
     <span class="hljs-keyword">this</span>.db.findOne({<span class="hljs-string">'sys.id'</span>: id}, (err, doc) =&gt; {
       <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)

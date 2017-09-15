@@ -59,7 +59,7 @@
     <span class="hljs-attr">"babel"</span>: <span class="hljs-string">"cross-env NODE_ENV=node6 babel lib -d dist"</span>,
     <span class="hljs-attr">"babel:watch"</span>: <span class="hljs-string">"cross-env NODE_ENV=node6 babel lib -d dist -w"</span>,
     <span class="hljs-attr">"test:coverage"</span>: <span class="hljs-string">"cross-env NODE_ENV=test nyc --reporter=lcov --reporter=text --check-coverage --lines 100 npm run test"</span>,
-    <span class="hljs-attr">"test"</span>: <span class="hljs-string">"cross-env DEBUG=metalsmith*,flashheart NODE_ENV=test mocha --compilers js:babel-register test/index"</span>,
+    <span class="hljs-attr">"test"</span>: <span class="hljs-string">"cross-env DEBUG=metalsmith* NODE_ENV=test mocha --compilers js:babel-register test/index"</span>,
     <span class="hljs-attr">"test:watch"</span>: <span class="hljs-string">"cross-env NODE_ENV=test mocha --compilers js:babel-register --watch test"</span>,
     <span class="hljs-attr">"version"</span>: <span class="hljs-string">"npm run build"</span>,
     <span class="hljs-attr">"postversion"</span>: <span class="hljs-string">"git push &amp;&amp; git push --tags"</span>
