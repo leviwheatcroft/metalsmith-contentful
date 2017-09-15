@@ -11,7 +11,7 @@
     "babel": "cross-env NODE_ENV=node6 babel lib -d dist",
     "babel:watch": "cross-env NODE_ENV=node6 babel lib -d dist -w",
     "test:coverage": "cross-env NODE_ENV=test nyc --reporter=lcov --reporter=text --check-coverage --lines 100 npm run test",
-    "test": "cross-env DEBUG=metalsmith*,flashheart NODE_ENV=test mocha --compilers js:babel-register test/index",
+    "test": "cross-env DEBUG=metalsmith* NODE_ENV=test mocha --compilers js:babel-register test/index",
     "test:watch": "cross-env NODE_ENV=test mocha --compilers js:babel-register --watch test",
     "version": "npm run build",
     "postversion": "git push && git push --tags"

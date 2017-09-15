@@ -30,7 +30,7 @@ describe('metalsmith-contentful', () => {
         {
           files: {
             destPath: 'articles',
-            contentType: 'Post'
+            query: 'Post'
           },
           cache: 'invalidate'
         },
