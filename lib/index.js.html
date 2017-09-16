@@ -496,13 +496,11 @@ metalsmith meta in an object keyed by contentful id</p>
         </td>
         <td class="code highlight">
           <pre class="javascript">  applyMeta () {
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.findResolved({}, <span class="hljs-keyword">this</span>.opt.resolveDepth)
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.find({}, <span class="hljs-keyword">this</span>.opt.resolveDepth)
     .then(<span class="hljs-function">(<span class="hljs-params">docs</span>) =&gt;</span> {
       <span class="hljs-keyword">let</span> entries = {
         <span class="hljs-attr">find</span>: <span class="hljs-keyword">this</span>.cache.find.bind(<span class="hljs-keyword">this</span>.cache),
-        <span class="hljs-attr">findResolved</span>: <span class="hljs-keyword">this</span>.cache.findResolved.bind(<span class="hljs-keyword">this</span>.cache),
-        <span class="hljs-attr">findOne</span>: <span class="hljs-keyword">this</span>.cache.findOne.bind(<span class="hljs-keyword">this</span>.cache),
-        <span class="hljs-attr">findOneResolved</span>: <span class="hljs-keyword">this</span>.cache.findOneResolved.bind(<span class="hljs-keyword">this</span>.cache)
+        <span class="hljs-attr">findOne</span>: <span class="hljs-keyword">this</span>.cache.findOne.bind(<span class="hljs-keyword">this</span>.cache)
       }
 </pre>
         </td>
@@ -569,7 +567,7 @@ makeFiles
         </td>
         <td class="code highlight">
           <pre class="javascript">    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> query === <span class="hljs-string">'string'</span>) query = {<span class="hljs-string">'sys.contentType.name'</span>: query}
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.findResolved(query, <span class="hljs-keyword">this</span>.opt.resolveDepth)
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.find(query, <span class="hljs-keyword">this</span>.opt.resolveDepth)
     .then(<span class="hljs-function">(<span class="hljs-params">docs</span>) =&gt;</span> {
       docs.forEach(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> {
         <span class="hljs-keyword">let</span> file = <span class="hljs-keyword">this</span>.coerce(doc.fields)

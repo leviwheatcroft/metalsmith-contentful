@@ -47,7 +47,11 @@
       </div>
 
       <div class="heading h3">
-        <a href="#cache">cache</a>
+        <a href="#resolving-links">resolving links</a>
+      </div>
+
+      <div class="heading h3">
+        <a href="#queries">queries</a>
       </div>
 
       <div class="heading h2">
@@ -72,7 +76,8 @@
 metalsmith-contentful
   </h1>
 </div>
-<p><img src="https://nodei.co/npm/metalsmith-contentful.png?downloads=true&amp;downloadRank=true&amp;stars=true" alt="nodei.co"> <img src="https://img.shields.io/npm/v/metalsmith-contentful.svg" alt="npm"> <img src="https://img.shields.io/github/issues/leviwheatcroft/metalsmith-contentful.svg" alt="github-issues"> <img src="https://img.shields.io/github/stars/leviwheatcroft/metalsmith-contentful.svg" alt="stars"> <img src="https://img.shields.io/github/forks/leviwheatcroft/metalsmith-contentful.svg" alt="forks"></p>
+<p><img src="https://nodei.co/npm/metalsmith-contentful.png?downloads=true&amp;downloadRank=true&amp;stars=true" alt="nodei.co"></p>
+<p><img src="https://img.shields.io/npm/v/metalsmith-contentful.svg" alt="npm"> <img src="https://img.shields.io/github/issues/leviwheatcroft/metalsmith-contentful.svg" alt="github-issues"> <img src="https://img.shields.io/github/stars/leviwheatcroft/metalsmith-contentful.svg" alt="stars"> <img src="https://img.shields.io/github/forks/leviwheatcroft/metalsmith-contentful.svg" alt="forks"></p>
 <p><a href="https://metalsmith.io">metalsmith</a> plugin to scrape content from contentful</p>
 <p>This is not the official <a href="https://github.com/contentful/contentful-metalsmith" title="official contentful-metalsmith plugin">contentful-metalsmith</a> plugin.</p>
 <p>Highlights:</p>
@@ -122,13 +127,13 @@ example
     <span class="hljs-attr">accessToken</span>: <span class="hljs-string">'9aXKQnP2UjjEeSSUcyGCMAOhnm4Vsf8u'</span>,
     <span class="hljs-attr">files</span>: {
       <span class="hljs-attr">destPath</span>: <span class="hljs-string">'articles'</span>,
-      <span class="hljs-attr">contentType</span>: <span class="hljs-string">'Post'</span>
-      coerce: <span class="hljs-function">(<span class="hljs-params">file, contentful</span>) =&gt;</span> {
+      <span class="hljs-attr">query</span>: <span class="hljs-string">'Post'</span>,
+      <span class="hljs-attr">coerce</span>: <span class="hljs-function">(<span class="hljs-params">file, contentful</span>) =&gt;</span> {
         file.author = contentful.author || <span class="hljs-string">'Team'</span>
       }
     },
     <span class="hljs-attr">resolveDepth</span>: <span class="hljs-number">2</span>,
-    <span class="hljs-attr">cache</span>: process.env[<span class="hljs-string">'NODE_ENV'</span>] === <span class="hljs-string">'production'</span> ? <span class="hljs-string">'invalidate'</span> : <span class="hljs-literal">true</span>
+    <span class="hljs-attr">invalidateCache</span>: process.env[<span class="hljs-string">'NODE_ENV'</span>] === <span class="hljs-string">'production'</span>
   })
 )
 .build( ... )
@@ -141,24 +146,64 @@ options
 </div>
 <ul>
 <li><code>space</code> {String} (required) id of contentful space you wish to scrape</li>
-<li><code>destPath</code> {String} (required) the path under which you want to place the scraped files</li>
-<li><code>accessToken</code> {String} (required) contentful accessToken</li>
-<li><code>query</code> {Object} contentful api query, to filter results</li>
+<li><code>destPath</code> {String} (required) the path under which you want to place the
+scraped files</li>
+<li><code>resolveDepth</code> {Number} (default: 2) recursion for <a href=".html">resolving links</a></li>
+<li><code>concurrency</code> {Number} (default: 3) concurrent cache ops (memory rw)</li>
 <li><code>parse</code> {Function} function to convert contentful result to metalsmith file</li>
-<li><code>cache</code> {Boolean|&quot;invalidate&quot;} cache mode</li>
+<li><code>invalidateCache</code> {Boolean} clear cache on start</li>
+<li><code>files</code> {Object} (optional) <a href=".html">file creation</a> opts</li>
+<li><code>files.destPath</code> {String} path under which to place files</li>
+<li><code>files.coerce</code> {Function} fn to convert files</li>
+<li><code>files.query</code> {String|Object} <a href=".html">query</a> for files to create</li>
 </ul>
-<div class="pilwrap" id="cache">
+<div class="pilwrap" id="resolving-links">
   <h3>
-    <a href="#cache" name="cache" class="pilcrow"></a>
-cache
+    <a href="#resolving-links" name="resolving-links" class="pilcrow"></a>
+resolving links
   </h3>
 </div>
-<p>several modes:</p>
+<p>Items in a contentful space can reference other items. By default, up to the second level of each item is resolved. You can increase this, but if you have circular references in your structure then doing so will dramatically slow things down.</p>
+<div class="pilwrap" id="queries">
+  <h3>
+    <a href="#queries" name="queries" class="pilcrow"></a>
+queries
+  </h3>
+</div>
+<p>This plugin doesn't use contentful queries, it just pulls down everything and
+stores it in your cache. You can then query your cache with
+<a href="https://github.com/louischatriot/nedb#basic-querying" title="nedb readme">nedb queries</a>. Items are stored in cache in the same form
+they're retrieved from contentful with 1 exception, the <code>sys.contentType</code>
+property on entries, just to allow you to query by contentType more easily.
+If you're struggling with queries consider using something like
+<a href="https://github.com/leviwheatcroft/metalsmith-debug-ui" title="metalsmith-debug-ui repo">metalsmith-debug-ui</a> to take a look at the structure of
+data stored in metadata.</p>
+<p>The <code>contentful</code> property in metadata exposes two functions <code>find</code> and <code>findOne</code>. Consider
+the following example. Both return promises which resolve to the query result, and both accept the following options:</p>
 <ul>
-<li><code>undefined</code> (default) - request files changed since last run</li>
-<li><code>true</code> - if cache exists, don't issue any requests.</li>
-<li><code>&quot;invalidate&quot;</code> - destroy existing cache.</li>
+<li>query {Object} (required) nedb query</li>
+<li>resolveDepth {Number} (default: 0) recursion for link resolving</li>
+<li>callback {Function} (optional) if that's how you roll</li>
 </ul>
+<p>Usage example:</p>
+<pre><code class="javascript">Metalsmith(<span class="hljs-string">'src'</span>)
+.use(
+  contentful({
+    <span class="hljs-attr">space</span>: <span class="hljs-string">'aH7WHo2HQFrX5CHbGZx4'</span>,
+    <span class="hljs-attr">accessToken</span>: <span class="hljs-string">'9aXKQnP2UjjEeSSUcyGCMAOhnm4Vsf8u'</span>
+  })
+)
+.use(<span class="hljs-function">(<span class="hljs-params">files, metalsmith</span>) =&gt;</span> {
+  <span class="hljs-keyword">let</span> query = {<span class="hljs-string">'fields.file.contentType'</span>: <span class="hljs-regexp">/^image/</span>}
+  <span class="hljs-keyword">let</span> resolveDepth = <span class="hljs-number">3</span> <span class="hljs-comment">// default is 2</span>
+  <span class="hljs-keyword">return</span> metalsmith.metadata().contentful.find(query, resolveDepth)
+  .then(<span class="hljs-function">(<span class="hljs-params">images</span>) =&gt;</span> {
+    <span class="hljs-keyword">let</span> imageUrls = images.map(<span class="hljs-function">(<span class="hljs-params">image</span>) =&gt;</span> image.fields.file.url)
+    metalsmith.metadata().contentfulImageUrls = imageUrls
+  })
+})
+.build( ... )
+</code></pre>
 <div class="pilwrap" id="author">
   <h2>
     <a href="#author" name="author" class="pilcrow"></a>

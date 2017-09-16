@@ -35,14 +35,6 @@
       </div>
 
       <div class="heading h2">
-        <a href="#findresolved">findResolved</a>
-      </div>
-
-      <div class="heading h2">
-        <a href="#findoneresolved">findOneResolved</a>
-      </div>
-
-      <div class="heading h2">
         <a href="#find">find</a>
       </div>
 
@@ -127,7 +119,7 @@ invalidate
         </td>
         <td class="code highlight">
           <pre class="javascript">  invalidate () {
-    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.opt.cache === <span class="hljs-string">'invalidate'</span>) {
+    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.opt.invalidateCache) {
       dbg(<span class="hljs-string">'invalidating cache'</span>)
       <span class="hljs-keyword">const</span> defer = vow.defer()
       <span class="hljs-keyword">this</span>.db.remove({}, {<span class="hljs-attr">multi</span>: <span class="hljs-literal">true</span>}, defer.resolve.bind(defer))
@@ -153,11 +145,16 @@ invalidate
       promiseSpool({
         <span class="hljs-attr">fetch</span>: <span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> vow.resolve(docs),
         <span class="hljs-attr">worker</span>: <span class="hljs-function">(<span class="hljs-params">entry</span>) =&gt;</span> {
-          <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.findOne({<span class="hljs-string">'sys.id'</span>: entry.sys.contentType.sys.id})
-          .then(<span class="hljs-function">(<span class="hljs-params">contentType</span>) =&gt;</span> {
-            entry.sys.contentType = contentType
-            <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.upsert(entry)
-          })
+          <span class="hljs-keyword">let</span> defer = vow.defer()
+          <span class="hljs-keyword">this</span>.db.findOne(
+            {<span class="hljs-string">'sys.id'</span>: entry.sys.contentType.sys.id},
+            (err, contentType) =&gt; {
+              <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
+              entry.sys.contentType = contentType
+              <span class="hljs-keyword">this</span>.upsert(entry)
+              .then(defer.resolve.bind(defer))
+            }
+          )
         },
         <span class="hljs-attr">concurrency</span>: <span class="hljs-keyword">this</span>.opt.concurrency
       })
@@ -259,13 +256,12 @@ upsert
         <td class="docs">
           <div class="dox">
 <div class="summary">
-<div class="pilwrap" id="findresolved">
+<div class="pilwrap" id="find">
   <h2>
-    <a href="#findresolved" name="findresolved" class="pilcrow"></a>
-findResolved
+    <a href="#find" name="find" class="pilcrow"></a>
+find
   </h2>
 </div>
-<p>wrapper for find &amp; resolveCollection combo</p>
 </div>
 <div class="body">
 </div>
@@ -273,9 +269,17 @@ findResolved
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">  findResolved (query, resolveDepth, callback) {
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.find(query)
-    .then(<span class="hljs-function">(<span class="hljs-params">docs</span>) =&gt;</span> <span class="hljs-keyword">this</span>.resolveCollection(docs, resolveDepth))
+          <pre class="javascript">  find (query, resolveDepth, callback) {
+    <span class="hljs-keyword">let</span> defer = vow.defer()
+    <span class="hljs-keyword">this</span>.db.find(query, (err, docs) =&gt; {
+      <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
+      defer.resolve(docs)
+    })
+    <span class="hljs-keyword">return</span> defer.promise()
+    .then(<span class="hljs-function">(<span class="hljs-params">docs</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (resolveDepth) <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.resolveCollection(docs, resolveDepth)
+      <span class="hljs-keyword">return</span> docs
+    })
     .then(<span class="hljs-function">(<span class="hljs-params">docs</span>) =&gt;</span> {
 </pre>
         </td>
@@ -303,129 +307,34 @@ findResolved
         <td class="docs">
           <div class="dox">
 <div class="summary">
-<div class="pilwrap" id="findoneresolved">
-  <h2>
-    <a href="#findoneresolved" name="findoneresolved" class="pilcrow"></a>
-findOneResolved
-  </h2>
-</div>
-<p>wrapper for findOne &amp; resolve combo</p>
-</div>
-<div class="body">
-</div>
-</div>
-
-        </td>
-        <td class="code highlight">
-          <pre class="javascript">  findOneResolved (query, resolveDepth, callback) {
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.findOne(query)
-    .then(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> <span class="hljs-keyword">this</span>.resolve(doc, resolveDepth))
-    .then(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> {
-      <span class="hljs-keyword">if</span> (callback) process.nextTick(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> callback(doc))
-      <span class="hljs-keyword">return</span> doc
-    })
-  }
-
-</pre>
-        </td>
-      </tr>
-    
-      <tr>
-        <td class="docs">
-          <div class="dox">
-<div class="summary">
-<div class="pilwrap" id="find">
-  <h2>
-    <a href="#find" name="find" class="pilcrow"></a>
-find
-  </h2>
-</div>
-<p>query cache for single doc</p>
-</div>
-<div class="body">
-</div>
-<div class="details">
-<div class="dox_tag_title">Params</div>
-<div class="dox_tag_detail">
-<span class="dox_tag_name">query</span>
-<span class="dox_type">Object</span>
-<span>a nedb query (see readme)
-</span>
-</div>
-<div class="dox_tag_detail">
-<span class="dox_tag_name">callback</span>
-<span class="dox_type">Function</span>
-</div>
-<div class="dox_tag_title">Returns</div>
-<div class="dox_tag_detail">
-<span class="dox_tag_name"></span>
-<span class="dox_type">Promise.&lt;Object&gt;</span>
-<span>resolves to doc
-</span>
-</div>
-</div>
-</div>
-
-        </td>
-        <td class="code highlight">
-          <pre class="javascript">  find (query) {
-    <span class="hljs-keyword">let</span> defer = vow.defer()
-    <span class="hljs-keyword">this</span>.db.find(query, (err, docs) =&gt; {
-      <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
-      defer.resolve(docs)
-    })
-    <span class="hljs-keyword">return</span> defer.promise()
-  }
-
-</pre>
-        </td>
-      </tr>
-    
-      <tr>
-        <td class="docs">
-          <div class="dox">
-<div class="summary">
 <div class="pilwrap" id="findone">
   <h2>
     <a href="#findone" name="findone" class="pilcrow"></a>
 findOne
   </h2>
 </div>
-<p>query cache for single doc</p>
 </div>
 <div class="body">
-</div>
-<div class="details">
-<div class="dox_tag_title">Params</div>
-<div class="dox_tag_detail">
-<span class="dox_tag_name">query</span>
-<span class="dox_type">Object</span>
-<span>a nedb query (see readme)
-</span>
-</div>
-<div class="dox_tag_detail">
-<span class="dox_tag_name">callback</span>
-<span class="dox_type">Function</span>
-</div>
-<div class="dox_tag_title">Returns</div>
-<div class="dox_tag_detail">
-<span class="dox_tag_name"></span>
-<span class="dox_type">Promise.&lt;Object&gt;</span>
-<span>resolves to doc
-</span>
-</div>
 </div>
 </div>
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">  findOne (query) {
+          <pre class="javascript">  findOne (query, resolveDepth, callback) {
     <span class="hljs-keyword">let</span> defer = vow.defer()
-    <span class="hljs-keyword">this</span>.db.findOne(query, (err, doc) =&gt; {
+    <span class="hljs-keyword">this</span>.db.find(query, (err, doc) =&gt; {
       <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
       defer.resolve(doc)
     })
     <span class="hljs-keyword">return</span> defer.promise()
+    .then(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (resolveDepth) <span class="hljs-keyword">this</span>.resolve(doc, resolveDepth)
+      <span class="hljs-keyword">return</span> doc
+    })
+    .then(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (callback) process.nextTick(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> callback(doc))
+      <span class="hljs-keyword">return</span> doc
+    })
   }
 
 </pre>
