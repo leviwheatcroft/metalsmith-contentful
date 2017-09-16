@@ -43,7 +43,7 @@ class Cache {
    * invalidate cache
    */
   invalidate() {
-    if (this.opt.cache === 'invalidate') {
+    if (this.opt.invalidateCache) {
       dbg('invalidating cache');
       const defer = _vow2.default.defer();
       this.db.remove({}, { multi: true }, defer.resolve.bind(defer));
@@ -68,9 +68,11 @@ class Cache {
       (0, _promiseSpool2.default)({
         fetch: () => _vow2.default.resolve(docs),
         worker: entry => {
-          return this.findOne({ 'sys.id': entry.sys.contentType.sys.id }).then(contentType => {
+          let defer = _vow2.default.defer();
+          this.db.findOne({ 'sys.id': entry.sys.contentType.sys.id }, (err, contentType) => {
+            if (err) return defer.reject(err);
             entry.sys.contentType = contentType;
-            return this.upsert(entry);
+            this.upsert(entry).then(defer.resolve.bind(defer));
           });
         },
         concurrency: this.opt.concurrency
@@ -106,11 +108,19 @@ class Cache {
   }
 
   /**
-   * ## findResolved
-   * wrapper for find & resolveCollection combo
+   * ## find
+   *
    */
-  findResolved(query, resolveDepth, callback) {
-    return this.find(query).then(docs => this.resolveCollection(docs, resolveDepth)).then(docs => {
+  find(query, resolveDepth, callback) {
+    let defer = _vow2.default.defer();
+    this.db.find(query, (err, docs) => {
+      if (err) return defer.reject(err);
+      defer.resolve(docs);
+    });
+    return defer.promise().then(docs => {
+      if (resolveDepth) return this.resolveCollection(docs, resolveDepth);
+      return docs;
+    }).then(docs => {
       // half assed callback implementation for numpties
       if (callback) process.nextTick(() => callback(docs));
       return docs;
@@ -118,46 +128,22 @@ class Cache {
   }
 
   /**
-   * ## findOneResolved
-   * wrapper for findOne & resolve combo
-   */
-  findOneResolved(query, resolveDepth, callback) {
-    return this.findOne(query).then(doc => this.resolve(doc, resolveDepth)).then(doc => {
-      if (callback) process.nextTick(() => callback(doc));
-      return doc;
-    });
-  }
-
-  /**
-   * ## find
-   * query cache for single doc
-   * @param {Object} query a nedb query (see readme)
-   * @param {Function} callback
-   * @return {Promise.<Object>} resolves to doc
-   */
-  find(query) {
-    let defer = _vow2.default.defer();
-    this.db.find(query, (err, docs) => {
-      if (err) return defer.reject(err);
-      defer.resolve(docs);
-    });
-    return defer.promise();
-  }
-
-  /**
    * ## findOne
-   * query cache for single doc
-   * @param {Object} query a nedb query (see readme)
-   * @param {Function} callback
-   * @return {Promise.<Object>} resolves to doc
+   *
    */
-  findOne(query) {
+  findOne(query, resolveDepth, callback) {
     let defer = _vow2.default.defer();
-    this.db.findOne(query, (err, doc) => {
+    this.db.find(query, (err, doc) => {
       if (err) return defer.reject(err);
       defer.resolve(doc);
     });
-    return defer.promise();
+    return defer.promise().then(doc => {
+      if (resolveDepth) this.resolve(doc, resolveDepth);
+      return doc;
+    }).then(doc => {
+      if (callback) process.nextTick(() => callback(doc));
+      return doc;
+    });
   }
 
   /**

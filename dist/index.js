@@ -168,12 +168,10 @@ class Space {
    * @return {Promise}
    */
   applyMeta() {
-    return this.cache.findResolved({}, this.opt.resolveDepth).then(docs => {
+    return this.cache.find({}, this.opt.resolveDepth).then(docs => {
       let entries = {
         find: this.cache.find.bind(this.cache),
-        findResolved: this.cache.findResolved.bind(this.cache),
-        findOne: this.cache.findOne.bind(this.cache),
-        findOneResolved: this.cache.findOneResolved.bind(this.cache)
+        findOne: this.cache.findOne.bind(this.cache)
         // key meta by id, omit `sys`
       };docs.forEach(doc => {
         entries[doc.sys.id] = doc.fields;
@@ -193,7 +191,7 @@ class Space {
     let query = this.opt.files.query;
     // for convenience, you can just pass a contentType instead of a query
     if (typeof query === 'string') query = { 'sys.contentType.name': query };
-    return this.cache.findResolved(query, this.opt.resolveDepth).then(docs => {
+    return this.cache.find(query, this.opt.resolveDepth).then(docs => {
       docs.forEach(doc => {
         let file = this.coerce(doc.fields);
         // attach to metalsmith files structure
