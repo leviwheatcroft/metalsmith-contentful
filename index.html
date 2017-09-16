@@ -55,6 +55,10 @@
       </div>
 
       <div class="heading h2">
+        <a href="#file-creation">file creation</a>
+      </div>
+
+      <div class="heading h2">
         <a href="#author">Author</a>
       </div>
 
@@ -123,14 +127,11 @@ example
 <pre><code class="javascript">Metalsmith(<span class="hljs-string">'src'</span>)
 .use(
   contentful({
-    <span class="hljs-attr">space</span>: <span class="hljs-string">'aH7WHo2HQFrX5CHbGZx4'</span>,
-    <span class="hljs-attr">accessToken</span>: <span class="hljs-string">'9aXKQnP2UjjEeSSUcyGCMAOhnm4Vsf8u'</span>,
+    <span class="hljs-attr">space</span>: <span class="hljs-string">'aH7WHo2REFrZ6CHbGZx4'</span>,
+    <span class="hljs-attr">accessToken</span>: <span class="hljs-string">'9aXKQnP2UjjEeTTUcyGCMAOmhn4Vsf8u'</span>,
     <span class="hljs-attr">files</span>: {
       <span class="hljs-attr">destPath</span>: <span class="hljs-string">'articles'</span>,
-      <span class="hljs-attr">query</span>: <span class="hljs-string">'Post'</span>,
-      <span class="hljs-attr">coerce</span>: <span class="hljs-function">(<span class="hljs-params">file, contentful</span>) =&gt;</span> {
-        file.author = contentful.author || <span class="hljs-string">'Team'</span>
-      }
+      <span class="hljs-attr">query</span>: <span class="hljs-string">'Post'</span>
     },
     <span class="hljs-attr">resolveDepth</span>: <span class="hljs-number">2</span>,
     <span class="hljs-attr">invalidateCache</span>: process.env[<span class="hljs-string">'NODE_ENV'</span>] === <span class="hljs-string">'production'</span>
@@ -202,6 +203,33 @@ the following example. Both return promises which resolve to the query result, a
     metalsmith.metadata().contentfulImageUrls = imageUrls
   })
 })
+.build( ... )
+</code></pre>
+<div class="pilwrap" id="file-creation">
+  <h2>
+    <a href="#file-creation" name="file-creation" class="pilcrow"></a>
+file creation
+  </h2>
+</div>
+<p>This behaviour is optional. If you pass in a <code>files</code> property files will be created in the metalsmith files structure.</p>
+<p>The <code>query</code> option determines what items from the contentful space will be used to create files, it can either be a <a href="https://github.com/louischatriot/nedb#basic-querying" title="nedb readme">nedb query</a>, or the name of a ContentType.</p>
+<p><code>destPath</code> determines the root path under which the files will be created. All files are created with a .md extension to allow for easy identification by other plugins.</p>
+<p>The plugin makes a good attempt at creating a metalsmith file, but depending on your space configuration you may need to augment it with a custom <code>coerce</code> function. For example, the example contentful spaces use a <code>body</code> field for contents (but <code>contents</code> will work too). If you use something else like <code>article</code> then you'll need to map that to <code>contents</code> yourself, as shown.</p>
+<pre><code class="javascript">Metalsmith(<span class="hljs-string">'src'</span>)
+.use(
+  contentful({
+    <span class="hljs-attr">space</span>: <span class="hljs-string">'aH7WHo2REFrZ6CHbGZx4'</span>,
+    <span class="hljs-attr">accessToken</span>: <span class="hljs-string">'9aXKQnP2UjjEeTTUcyGCMAOmhn4Vsf8u'</span>,
+    <span class="hljs-attr">files</span>: {
+      <span class="hljs-attr">destPath</span>: <span class="hljs-string">'articles'</span>,
+      <span class="hljs-attr">query</span>: <span class="hljs-string">'Post'</span>,
+      <span class="hljs-attr">coerce</span>: <span class="hljs-function">(<span class="hljs-params">file</span>) =&gt;</span> {
+        file.contents = Buffer.from(file.article)
+        <span class="hljs-keyword">return</span> file
+      }
+    }
+  })
+)
 .build( ... )
 </code></pre>
 <div class="pilwrap" id="author">
