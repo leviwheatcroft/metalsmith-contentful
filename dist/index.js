@@ -224,7 +224,7 @@ class Space {
     // slug-to-the-fi, preseciptive, but consumers can easily over write
     file.slug = (0, _slugify2.default)(file.title, { lower: true });
     // mangle path
-    file.path = (0, _path.join)(this.opt.files.destPath, file.slug);
+    file.path = (0, _path.join)(this.opt.files.destPath, `${file.slug}.md`);
     // apply passed in fn
     file = this.opt.files.coerce(file);
     return file;

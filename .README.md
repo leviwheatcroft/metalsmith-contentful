@@ -42,14 +42,11 @@ for all entries of a given `contentType`.
 Metalsmith('src')
 .use(
   contentful({
-    space: 'aH7WHo2HQFrX5CHbGZx4',
-    accessToken: '9aXKQnP2UjjEeSSUcyGCMAOhnm4Vsf8u',
+    space: 'aH7WHo2REFrZ6CHbGZx4',
+    accessToken: '9aXKQnP2UjjEeTTUcyGCMAOmhn4Vsf8u',
     files: {
       destPath: 'articles',
-      query: 'Post',
-      coerce: (file, contentful) => {
-        file.author = contentful.author || 'Team'
-      }
+      query: 'Post'
     },
     resolveDepth: 2,
     invalidateCache: process.env['NODE_ENV'] === 'production'
@@ -113,6 +110,35 @@ Metalsmith('src')
     metalsmith.metadata().contentfulImageUrls = imageUrls
   })
 })
+.build( ... )
+```
+
+## file creation
+
+This behaviour is optional. If you pass in a `files` property files will be created in the metalsmith files structure.
+
+The `query` option determines what items from the contentful space will be used to create files, it can either be a [nedb query][nedb queries], or the name of a ContentType.
+
+`destPath` determines the root path under which the files will be created. All files are created with a .md extension to allow for easy identification by other plugins.
+
+The plugin makes a good attempt at creating a metalsmith file, but depending on your space configuration you may need to augment it with a custom `coerce` function. For example, the example contentful spaces use a `body` field for contents (but `contents` will work too). If you use something else like `article` then you'll need to map that to `contents` yourself, as shown.
+
+```javascript
+Metalsmith('src')
+.use(
+  contentful({
+    space: 'aH7WHo2REFrZ6CHbGZx4',
+    accessToken: '9aXKQnP2UjjEeTTUcyGCMAOmhn4Vsf8u',
+    files: {
+      destPath: 'articles',
+      query: 'Post',
+      coerce: (file) => {
+        file.contents = Buffer.from(file.article)
+        return file
+      }
+    }
+  })
+)
 .build( ... )
 ```
 
