@@ -112,12 +112,10 @@ install
 overview
   </h2>
 </div>
-<p>A contentful space contains <code>entries</code> as defined by <code>content_types</code>, and
-<code>assets</code> for images or whatever. This plugin scrapes <em>all</em> these things from
-a given space, and exposes it at <code>metalsmith.metadata().contentful</code> in an object
-keyed by contentful id.</p>
-<p>You can create files in the metalsmith array. Presently you can only do this
-for all entries of a given <code>contentType</code>.</p>
+<p>A contentful space contains <code>entries</code> as defined by <code>content_types</code>, and <code>assets</code> for images or whatever. This plugin scrapes <em>all</em> these items from a given space.</p>
+<p>All items are exposed at <code>metalsmith.metadata().contentful</code> in an object keyed by contentful id</p>
+<p><code>metalsmith.metadata().contentful</code> also exposes <code>find</code> and <code>findOne</code> functions allowing you to query the items.</p>
+<p>The plugin also creates files in the metalsmith files array.</p>
 <div class="pilwrap" id="example">
   <h3>
     <a href="#example" name="example" class="pilcrow"></a>
@@ -149,14 +147,14 @@ options
 <li><code>space</code> {String} (required) id of contentful space you wish to scrape</li>
 <li><code>destPath</code> {String} (required) the path under which you want to place the
 scraped files</li>
-<li><code>resolveDepth</code> {Number} (default: 2) recursion for <a href=".html">resolving links</a></li>
+<li><code>resolveDepth</code> {Number} (default: 2) recursion for <a href="#resolving-links.html">resolving links</a></li>
 <li><code>concurrency</code> {Number} (default: 3) concurrent cache ops (memory rw)</li>
 <li><code>parse</code> {Function} function to convert contentful result to metalsmith file</li>
 <li><code>invalidateCache</code> {Boolean} clear cache on start</li>
 <li><code>files</code> {Object} (optional) <a href=".html">file creation</a> opts</li>
 <li><code>files.destPath</code> {String} path under which to place files</li>
 <li><code>files.coerce</code> {Function} fn to convert files</li>
-<li><code>files.query</code> {String|Object} <a href=".html">query</a> for files to create</li>
+<li><code>files.query</code> {String|Object} <a href="#queries.html">query</a> for files to create</li>
 </ul>
 <div class="pilwrap" id="resolving-links">
   <h3>
@@ -165,7 +163,7 @@ resolving links
   </h3>
 </div>
 <p>Items in a contentful space can reference other items. By default, up to the second level of each item is resolved. You can increase this, but if you have circular references in your structure then doing so will dramatically slow things down.</p>
-<p>Suppose in your content model you add a <code>coverImage</code> field which links to media stored on contentful. Provided the entry has been resolved resolved, you'll be able to access the url for that file like this:</p>
+<p>Suppose in your content model you add a <code>coverImage</code> field which links to media stored on contentful. Provided the entry has been resolved, you'll be able to access the url for that file like this:</p>
 <pre><code>&lt;header class=&quot;intro-header&quot; style=&quot;background-image: url('{{coverImage.file.url}}')&quot;&gt;
 </code></pre>
 <p>Finding different properties in the returned data may not be intuitive. If you're struggling you should try <a href="https://github.com/leviwheatcroft/metalsmith-debug-ui" title="metalsmith-debug-ui repo">metalsmith-debug-ui</a>, and take a look at the data structures returned by the <a href="https://www.contentful.com/developers/docs/references/content-delivery-api/" title="contentful api">contentful api</a>.</p>
@@ -179,7 +177,7 @@ queries
 stores it in your cache. You can then query your cache with
 <a href="https://github.com/louischatriot/nedb#basic-querying" title="nedb readme">nedb queries</a>. Items are stored in cache in the same form
 they're retrieved from contentful with 1 exception, the <code>sys.contentType</code>
-property on entries, just to allow you to query by contentType more easily.
+property on entries is resolved, just to allow you to query by contentType more easily.
 If you're struggling with queries consider using something like
 <a href="https://github.com/leviwheatcroft/metalsmith-debug-ui" title="metalsmith-debug-ui repo">metalsmith-debug-ui</a> to take a look at the structure of
 data stored in metadata.</p>
@@ -218,7 +216,7 @@ file creation
 <p>This behaviour is optional. If you pass in a <code>files</code> property files will be created in the metalsmith files structure.</p>
 <p>The <code>query</code> option determines what items from the contentful space will be used to create files, it can either be a <a href="https://github.com/louischatriot/nedb#basic-querying" title="nedb readme">nedb query</a>, or the name of a ContentType.</p>
 <p><code>destPath</code> determines the root path under which the files will be created. All files are created with a .md extension to allow for easy identification by other plugins.</p>
-<p>The plugin makes a good attempt at creating a metalsmith file, but depending on your space configuration you may need to augment it with a custom <code>coerce</code> function. For example, the example contentful spaces use a <code>body</code> field for contents (but <code>contents</code> will work too). If you use something else like <code>article</code> then you'll need to map that to <code>contents</code> yourself, as shown.</p>
+<p>The plugin makes a good attempt at creating a metalsmith file, but depending on your space configuration you may need to augment it with a custom <code>coerce</code> function. For example, the demo contentful spaces use a <code>body</code> field for contents (but <code>contents</code> will work too). If you use something else like <code>article</code> then you'll need to map that to <code>contents</code> yourself, as shown.</p>
 <pre><code class="javascript">Metalsmith(<span class="hljs-string">'src'</span>)
 .use(
   contentful({
