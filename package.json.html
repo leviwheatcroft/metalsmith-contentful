@@ -52,7 +52,7 @@
   <span class="hljs-attr">"description"</span>: <span class="hljs-string">"metalsmith plugin scrape content from contentful"</span>,
   <span class="hljs-attr">"main"</span>: <span class="hljs-string">"dist/index.js"</span>,
   <span class="hljs-attr">"scripts"</span>: {
-    <span class="hljs-attr">"docs"</span>: <span class="hljs-string">"rm -fr ./docs/* &amp;&amp; docker -o ./docs -I -x dist,.README.md,test/fixtures,node_modules,docs,.store"</span>,
+    <span class="hljs-attr">"docs"</span>: <span class="hljs-string">"rm -fr ./docs/* &amp;&amp; docker -o ./docs -I -x dist,.README.md,test/fixtures,node_modules,docs,config/local.js"</span>,
     <span class="hljs-attr">"readme"</span>: <span class="hljs-string">"node-readme"</span>,
     <span class="hljs-attr">"gh-pages"</span>: <span class="hljs-string">"gh-pages -d docs"</span>,
     <span class="hljs-attr">"build"</span>: <span class="hljs-string">"npm run babel &amp;&amp; npm run readme &amp;&amp; npm run docs &amp;&amp; cp docs/README.md.html docs/index.html &amp;&amp; npm run gh-pages"</span>,

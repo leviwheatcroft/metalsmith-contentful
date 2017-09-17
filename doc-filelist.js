@@ -1,1 +1,1 @@
-var tree={"files":["README.md","package-lock.json","package.json"],"dirs":{"config":{"files":["default.js","local.js","test.js"]},"lib":{"files":["Cache.js","index.js"]},"test":{"files":["index.js"]}}};
+var tree={"files":["README.md","package-lock.json","package.json"],"dirs":{"config":{"files":["default.js","test.js"]},"lib":{"files":["Cache.js","index.js"]},"test":{"files":["index.js"]}}};
