@@ -121,7 +121,7 @@ sinon.spy(cloudinary.api, 'resources')</p>
         config.get(<span class="hljs-string">'metalsmith-contentful'</span>)
       )))
       .use(<span class="hljs-function">(<span class="hljs-params">files, metalsmith</span>) =&gt;</span> {
-        <span class="hljs-keyword">let</span> file = files[<span class="hljs-string">'articles/seven-tips-from-ernest-hemingway-on-how-to-write-fiction'</span>]
+        <span class="hljs-keyword">let</span> file = files[<span class="hljs-string">'articles/seven-tips-from-ernest-hemingway-on-how-to-write-fiction.md'</span>]
         assert.ok(file)
         assert.equal(file.category[<span class="hljs-number">0</span>].title, <span class="hljs-string">'Literature'</span>) <span class="hljs-comment">// resolved</span>
         assert.ok(<span class="hljs-built_in">Object</span>.keys(metalsmith.metadata().contentful).length)
