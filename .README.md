@@ -27,14 +27,13 @@ so made something from scratch.
 
 ## overview
 
-A contentful space contains `entries` as defined by `content_types`, and
-`assets` for images or whatever. This plugin scrapes *all* these things from
-a given space, and exposes it at `metalsmith.metadata().contentful` in an object
-keyed by contentful id.
+A contentful space contains `entries` as defined by `content_types`, and `assets` for images or whatever. This plugin scrapes *all* these items from a given space.
 
-You can create files in the metalsmith array. Presently you can only do this
-for all entries of a given `contentType`.
+All items are exposed at `metalsmith.metadata().contentful` in an object keyed by contentful id
 
+`metalsmith.metadata().contentful` also exposes `find` and `findOne` functions allowing you to query the items.
+
+The plugin also creates files in the metalsmith files array.
 
 ### example
 
@@ -60,20 +59,20 @@ Metalsmith('src')
  * `space` {String} (required) id of contentful space you wish to scrape
  * `destPath` {String} (required) the path under which you want to place the
    scraped files
- * `resolveDepth` {Number} (default: 2) recursion for [resolving links]()
+ * `resolveDepth` {Number} (default: 2) recursion for [resolving links](#resolving-links)
  * `concurrency` {Number} (default: 3) concurrent cache ops (memory rw)
  * `parse` {Function} function to convert contentful result to metalsmith file
  * `invalidateCache` {Boolean} clear cache on start
  * `files` {Object} (optional) [file creation]() opts
  * `files.destPath` {String} path under which to place files
  * `files.coerce` {Function} fn to convert files
- * `files.query` {String|Object} [query]() for files to create
+ * `files.query` {String|Object} [query](#queries) for files to create
 
 ### resolving links
 
 Items in a contentful space can reference other items. By default, up to the second level of each item is resolved. You can increase this, but if you have circular references in your structure then doing so will dramatically slow things down.
 
-Suppose in your content model you add a `coverImage` field which links to media stored on contentful. Provided the entry has been resolved resolved, you'll be able to access the url for that file like this:
+Suppose in your content model you add a `coverImage` field which links to media stored on contentful. Provided the entry has been resolved, you'll be able to access the url for that file like this:
 
 ```
 <header class="intro-header" style="background-image: url('{{coverImage.file.url}}')">
@@ -87,7 +86,7 @@ This plugin doesn't use contentful queries, it just pulls down everything and
 stores it in your cache. You can then query your cache with
 [nedb queries][nedb queries]. Items are stored in cache in the same form
 they're retrieved from contentful with 1 exception, the `sys.contentType`
-property on entries, just to allow you to query by contentType more easily.
+property on entries is resolved, just to allow you to query by contentType more easily.
 If you're struggling with queries consider using something like
 [metalsmith-debug-ui][metalsmith-debug-ui] to take a look at the structure of
 data stored in metadata.
@@ -129,7 +128,7 @@ The `query` option determines what items from the contentful space will be used 
 
 `destPath` determines the root path under which the files will be created. All files are created with a .md extension to allow for easy identification by other plugins.
 
-The plugin makes a good attempt at creating a metalsmith file, but depending on your space configuration you may need to augment it with a custom `coerce` function. For example, the example contentful spaces use a `body` field for contents (but `contents` will work too). If you use something else like `article` then you'll need to map that to `contents` yourself, as shown.
+The plugin makes a good attempt at creating a metalsmith file, but depending on your space configuration you may need to augment it with a custom `coerce` function. For example, the demo contentful spaces use a `body` field for contents (but `contents` will work too). If you use something else like `article` then you'll need to map that to `contents` yourself, as shown.
 
 ```javascript
 Metalsmith('src')
