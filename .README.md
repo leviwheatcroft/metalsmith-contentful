@@ -73,6 +73,14 @@ Metalsmith('src')
 
 Items in a contentful space can reference other items. By default, up to the second level of each item is resolved. You can increase this, but if you have circular references in your structure then doing so will dramatically slow things down.
 
+Suppose in your content model you add a `coverImage` field which links to media stored on contentful. Provided the entry has been resolved resolved, you'll be able to access the url for that file like this:
+
+```
+<header class="intro-header" style="background-image: url('{{coverImage.file.url}}')">
+```
+
+Finding different properties in the returned data may not be intuitive. If you're struggling you should try [metalsmith-debug-ui][metalsmith-debug-ui], and take a look at the data structures returned by the [contentful api][contentful api].
+
 ### queries
 
 This plugin doesn't use contentful queries, it just pulls down everything and
@@ -160,3 +168,4 @@ branch.
 [contentful-metalsmith]: https://github.com/contentful/contentful-metalsmith "official contentful-metalsmith plugin"
 [nedb queries]: https://github.com/louischatriot/nedb#basic-querying "nedb readme"
 [metalsmith-debug-ui]: https://github.com/leviwheatcroft/metalsmith-debug-ui "metalsmith-debug-ui repo"
+[contentful api]: https://www.contentful.com/developers/docs/references/content-delivery-api/ "contentful api"
