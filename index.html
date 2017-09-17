@@ -165,6 +165,10 @@ resolving links
   </h3>
 </div>
 <p>Items in a contentful space can reference other items. By default, up to the second level of each item is resolved. You can increase this, but if you have circular references in your structure then doing so will dramatically slow things down.</p>
+<p>Suppose in your content model you add a <code>coverImage</code> field which links to media stored on contentful. Provided the entry has been resolved resolved, you'll be able to access the url for that file like this:</p>
+<pre><code>&lt;header class=&quot;intro-header&quot; style=&quot;background-image: url('{{coverImage.file.url}}')&quot;&gt;
+</code></pre>
+<p>Finding different properties in the returned data may not be intuitive. If you're struggling you should try <a href="https://github.com/leviwheatcroft/metalsmith-debug-ui" title="metalsmith-debug-ui repo">metalsmith-debug-ui</a>, and take a look at the data structures returned by the <a href="https://www.contentful.com/developers/docs/references/content-delivery-api/" title="contentful api">contentful api</a>.</p>
 <div class="pilwrap" id="queries">
   <h3>
     <a href="#queries" name="queries" class="pilcrow"></a>
