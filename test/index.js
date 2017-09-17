@@ -37,7 +37,7 @@ describe('metalsmith-contentful', () => {
         config.get('metalsmith-contentful')
       )))
       .use((files, metalsmith) => {
-        let file = files['articles/seven-tips-from-ernest-hemingway-on-how-to-write-fiction']
+        let file = files['articles/seven-tips-from-ernest-hemingway-on-how-to-write-fiction.md']
         assert.ok(file)
         assert.equal(file.category[0].title, 'Literature') // resolved
         assert.ok(Object.keys(metalsmith.metadata().contentful).length)
