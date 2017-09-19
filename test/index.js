@@ -32,11 +32,12 @@ describe('metalsmith-contentful', () => {
             destPath: 'articles',
             query: 'Post'
           },
-          cache: 'invalidate'
+          invalidateCache: true
         },
         config.get('metalsmith-contentful')
       )))
       .use((files, metalsmith) => {
+        // dbg(metalsmith.metadata().contentful)
         let file = files['articles/seven-tips-from-ernest-hemingway-on-how-to-write-fiction.md']
         assert.ok(file)
         assert.equal(file.category[0].title, 'Literature') // resolved

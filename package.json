@@ -4,7 +4,7 @@
   "description": "metalsmith plugin scrape content from contentful",
   "main": "dist/index.js",
   "scripts": {
-    "docs": "rm -fr ./docs/* && docker -o ./docs -I -x dist,.README.md,test/fixtures,node_modules,docs,.store",
+    "docs": "rm -fr ./docs/* && docker -o ./docs -I -x dist,.README.md,test/fixtures,node_modules,docs,config/local.js",
     "readme": "node-readme",
     "gh-pages": "gh-pages -d docs",
     "build": "npm run babel && npm run readme && npm run docs && cp docs/README.md.html docs/index.html && npm run gh-pages",
@@ -40,7 +40,6 @@
     "async": "^2.5.0",
     "contentful": "^4.6.1",
     "debug": "^2.6.8",
-    "flashheart": "^2.9.0",
     "metalsmith-cache": "^1.1.0",
     "moment": "^2.18.1",
     "nedb": "^1.8.0",
