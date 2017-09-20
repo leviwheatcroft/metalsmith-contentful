@@ -129,7 +129,7 @@ invalidate
   requestOrCache () {
     <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.count()
     .then(<span class="hljs-function">(<span class="hljs-params">count</span>) =&gt;</span> {
-      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.opt.cache &amp;&amp; count) {
+      <span class="hljs-keyword">if</span> (!<span class="hljs-keyword">this</span>.opt.invalidateCache &amp;&amp; count) {
         dbg(<span class="hljs-string">'skipping request, read from cache'</span>)
         <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'cache only'</span>)
       } <span class="hljs-keyword">else</span> {
@@ -203,6 +203,10 @@ count
     <span class="hljs-keyword">return</span> defer.promise()
   }
 
+  upsertCollection (docs) {
+    <span class="hljs-keyword">return</span> vow.all(docs.map(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> <span class="hljs-keyword">this</span>.upsert(doc)))
+  }
+
 </pre>
         </td>
       </tr>
@@ -243,8 +247,37 @@ upsert
       {<span class="hljs-string">'sys.id'</span>: doc.sys.id},
       doc,
       {<span class="hljs-attr">upsert</span>: <span class="hljs-literal">true</span>},
-      defer.resolve.bind(defer)
-    )
+      (err, res) =&gt; {
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-5" id="section-5"></a>
+</div>
+<p>if (err) dbg(err)</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">        <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
+        defer.resolve(res)
+      }
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-6" id="section-6"></a>
+</div>
+<p>defer.resolve.bind(defer)</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">    )
     <span class="hljs-keyword">return</span> defer.promise()
   }
 
@@ -288,7 +321,7 @@ find
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-6" id="section-6"></a>
+  <a class="pilcrow" href="#section-8" id="section-8"></a>
 </div>
 <p>half assed callback implementation for numpties</p>
 

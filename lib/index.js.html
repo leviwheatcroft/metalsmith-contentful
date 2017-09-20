@@ -39,18 +39,6 @@
       </div>
 
       <div class="heading h2">
-        <a href="#scrape">scrape</a>
-      </div>
-
-      <div class="heading h2">
-        <a href="#retrieve">retrieve</a>
-      </div>
-
-      <div class="heading h2">
-        <a href="#fetch">fetch</a>
-      </div>
-
-      <div class="heading h2">
         <a href="#applymeta">applyMeta</a>
       </div>
 
@@ -99,8 +87,8 @@ with <code>find</code> and <code>findOne</code></li>
 <span class="hljs-keyword">import</span> debug <span class="hljs-keyword">from</span> <span class="hljs-string">'debug'</span>
 <span class="hljs-keyword">import</span> vow <span class="hljs-keyword">from</span> <span class="hljs-string">'vow'</span>
 <span class="hljs-keyword">import</span> {
-  createClient <span class="hljs-keyword">as</span> flashheart
-} <span class="hljs-keyword">from</span> <span class="hljs-string">'flashheart'</span>
+  createClient
+} <span class="hljs-keyword">from</span> <span class="hljs-string">'contentful'</span>
 <span class="hljs-keyword">import</span> promiseSpool <span class="hljs-keyword">from</span> <span class="hljs-string">'promise-spool'</span>
 <span class="hljs-keyword">import</span> {
   join
@@ -245,8 +233,10 @@ constructor
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">    <span class="hljs-keyword">this</span>.client = flashheart({
-      <span class="hljs-attr">defaults</span>: {<span class="hljs-attr">qs</span>: {<span class="hljs-attr">access_token</span>: opt.accessToken}}
+          <pre class="javascript">    <span class="hljs-keyword">this</span>.client = createClient({
+      <span class="hljs-attr">space</span>: opt.space,
+      <span class="hljs-attr">accessToken</span>: opt.accessToken,
+      <span class="hljs-attr">resolveLinks</span>: <span class="hljs-literal">false</span>
     })
   }
 </pre>
@@ -294,50 +284,13 @@ contentful
     <span class="hljs-keyword">this</span>.metalsmith = metalsmith
     <span class="hljs-keyword">return</span> vow.resolve()
     .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.cache.invalidate())
-    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.scrape())
-    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.applyMeta())
-    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.makeFiles())
-    .catch(<span class="hljs-function">(<span class="hljs-params">err</span>) =&gt;</span> {
-      dbg(err)
-    })
-  }
-
-</pre>
-        </td>
-      </tr>
-    
-      <tr>
-        <td class="docs">
-          <div class="dox">
-<div class="summary">
-<div class="pilwrap" id="scrape">
-  <h2>
-    <a href="#scrape" name="scrape" class="pilcrow"></a>
-scrape
-  </h2>
-</div>
-<p>oversees operation of scraping entire space to cache
-by design, there's no options to limit what get's pulled down</p>
-</div>
-<div class="body">
-</div>
-<div class="details">
-<div class="dox_tag_title">Returns</div>
-<div class="dox_tag_detail">
-<span class="dox_tag_name"></span>
-<span class="dox_type">Promise</span>
-</div>
-</div>
-</div>
-
-        </td>
-        <td class="code highlight">
-          <pre class="javascript">  scrape () {
-    <span class="hljs-keyword">return</span> vow.resolve()
     .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.cache.requestOrCache())
-    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.retrieve(<span class="hljs-string">'content_types'</span>))
-    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.retrieve(<span class="hljs-string">'entries'</span>))
-    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.retrieve(<span class="hljs-string">'assets'</span>))
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.client.getContentTypes())
+    .then(<span class="hljs-function">(<span class="hljs-params">contentTypes</span>) =&gt;</span> <span class="hljs-keyword">this</span>.cache.upsertCollection(contentTypes.items))
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.client.getEntries())
+    .then(<span class="hljs-function">(<span class="hljs-params">entries</span>) =&gt;</span> <span class="hljs-keyword">this</span>.cache.upsertCollection(entries.items))
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.client.getAssets())
+    .then(<span class="hljs-function">(<span class="hljs-params">assets</span>) =&gt;</span> <span class="hljs-keyword">this</span>.cache.upsertCollection(assets.items))
     .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.cache.resolveContentTypes())
     .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
       <span class="hljs-keyword">this</span>.cache.count()
@@ -347,122 +300,11 @@ by design, there's no options to limit what get's pulled down</p>
       <span class="hljs-keyword">if</span> (err.message === <span class="hljs-string">'cache only'</span>) <span class="hljs-keyword">return</span>
       <span class="hljs-keyword">throw</span> err
     })
-  }
-
-</pre>
-        </td>
-      </tr>
-    
-      <tr>
-        <td class="docs">
-          <div class="dox">
-<div class="summary">
-<div class="pilwrap" id="retrieve">
-  <h2>
-    <a href="#retrieve" name="retrieve" class="pilcrow"></a>
-retrieve
-  </h2>
-</div>
-<p>async structure to drain everything from an endpoint with consecutive
-requests if required. Should play nice with large spaces.
-contentful api is fairly consistent so this works with all relevant
-endpoints</p>
-</div>
-<div class="body">
-</div>
-<div class="details">
-<div class="dox_tag_title">Params</div>
-<div class="dox_tag_detail">
-<span class="dox_tag_name">endpoint</span>
-<span class="dox_type">String</span>
-</div>
-<div class="dox_tag_title">Returns</div>
-<div class="dox_tag_detail">
-<span class="dox_tag_name"></span>
-<span class="dox_type">Promise</span>
-</div>
-</div>
-</div>
-
-        </td>
-        <td class="code highlight">
-          <pre class="javascript">  retrieve (endpoint) {
-    <span class="hljs-keyword">return</span> promiseSpool({
-      <span class="hljs-attr">fetch</span>: <span class="hljs-function">(<span class="hljs-params">retrieved</span>) =&gt;</span> {
-        <span class="hljs-keyword">let</span> url = <span class="hljs-string">`/spaces/<span class="hljs-subst">${<span class="hljs-keyword">this</span>.opt.space}</span>/<span class="hljs-subst">${endpoint}</span>`</span>
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.fetch(url, {<span class="hljs-attr">qs</span>: {<span class="hljs-attr">skip</span>: retrieved}})
-        .then(<span class="hljs-function">(<span class="hljs-params">res</span>) =&gt;</span> {
-          <span class="hljs-keyword">if</span> (retrieved + res.items.length &gt;= res.total) res.items.push(<span class="hljs-literal">null</span>)
-          <span class="hljs-keyword">return</span> res.items
-        })
-      },
-</pre>
-        </td>
-      </tr>
-    
-      <tr>
-        <td class="docs">
-          <div class="pilwrap">
-  <a class="pilcrow" href="#section-8" id="section-8"></a>
-</div>
-<p>each item returned is simply added to cache</p>
-
-        </td>
-        <td class="code highlight">
-          <pre class="javascript">      worker: <span class="hljs-keyword">this</span>.cache.upsert.bind(<span class="hljs-keyword">this</span>.cache),
-      <span class="hljs-attr">concurrency</span>: <span class="hljs-keyword">this</span>.concurrency
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.applyMeta())
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.makeFiles())
+    .catch(<span class="hljs-function">(<span class="hljs-params">err</span>) =&gt;</span> {
+      dbg(err)
     })
-  }
-
-</pre>
-        </td>
-      </tr>
-    
-      <tr>
-        <td class="docs">
-          <div class="dox">
-<div class="summary">
-<div class="pilwrap" id="fetch">
-  <h2>
-    <a href="#fetch" name="fetch" class="pilcrow"></a>
-fetch
-  </h2>
-</div>
-<p>manage a single request from contentful</p>
-</div>
-<div class="body">
-</div>
-<div class="details">
-<div class="dox_tag_title">Params</div>
-<div class="dox_tag_detail">
-<span class="dox_tag_name">url</span>
-<span class="dox_type">String</span>
-</div>
-<div class="dox_tag_detail">
-<span class="dox_tag_name">query</span>
-<span class="dox_type">Object</span>
-</div>
-<div class="dox_tag_title">Returns</div>
-<div class="dox_tag_detail">
-<span class="dox_tag_name"></span>
-<span class="dox_type">Promise.&lt;Response&gt;</span>
-</div>
-</div>
-</div>
-
-        </td>
-        <td class="code highlight">
-          <pre class="javascript">  fetch (url, query) {
-    <span class="hljs-keyword">let</span> defer = vow.defer()
-    <span class="hljs-keyword">this</span>.client.get(
-      <span class="hljs-string">`https://cdn.contentful.com/<span class="hljs-subst">${url}</span>`</span>,
-      query,
-      (err, res) =&gt; {
-        <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
-        defer.resolve(res)
-      }
-    )
-    <span class="hljs-keyword">return</span> defer.promise()
   }
 
 </pre>
@@ -509,7 +351,7 @@ metalsmith meta in an object keyed by contentful id</p>
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-11" id="section-11"></a>
+  <a class="pilcrow" href="#section-7" id="section-7"></a>
 </div>
 <p>key meta by id, omit <code>sys</code></p>
 
@@ -560,7 +402,7 @@ makeFiles
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-13" id="section-13"></a>
+  <a class="pilcrow" href="#section-9" id="section-9"></a>
 </div>
 <p>for convenience, you can just pass a contentType instead of a query</p>
 
@@ -578,7 +420,7 @@ makeFiles
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-14" id="section-14"></a>
+  <a class="pilcrow" href="#section-10" id="section-10"></a>
 </div>
 <p>attach to metalsmith files structure</p>
 
@@ -642,7 +484,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16"></a>
+  <a class="pilcrow" href="#section-12" id="section-12"></a>
 </div>
 <p>the contentful example spaces use <code>body</code> for <code>content</code></p>
 
@@ -656,7 +498,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17"></a>
+  <a class="pilcrow" href="#section-13" id="section-13"></a>
 </div>
 <p>many plugins expect <code>contents</code> to be a <code>Buffer</code></p>
 
@@ -670,7 +512,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-18" id="section-18"></a>
+  <a class="pilcrow" href="#section-14" id="section-14"></a>
 </div>
 <p>convert all ISO_8601 strings to moments &lt;-- handy!!</p>
 
@@ -689,7 +531,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-19" id="section-19"></a>
+  <a class="pilcrow" href="#section-15" id="section-15"></a>
 </div>
 <p>slug-to-the-fi, preseciptive, but consumers can easily over write</p>
 
@@ -703,7 +545,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20"></a>
+  <a class="pilcrow" href="#section-16" id="section-16"></a>
 </div>
 <p>mangle path</p>
 
@@ -717,7 +559,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-21" id="section-21"></a>
+  <a class="pilcrow" href="#section-17" id="section-17"></a>
 </div>
 <p>apply passed in fn</p>
 
