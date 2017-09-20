@@ -13,7 +13,7 @@ var _vow = require('vow');
 
 var _vow2 = _interopRequireDefault(_vow);
 
-var _flashheart = require('flashheart');
+var _contentful = require('contentful');
 
 var _promiseSpool = require('promise-spool');
 
@@ -86,8 +86,10 @@ class Space {
     this.opt = opt;
     this.cache = new _Cache2.default(this.opt);
     // initialise contentful client
-    this.client = (0, _flashheart.createClient)({
-      defaults: { qs: { access_token: opt.accessToken } }
+    this.client = (0, _contentful.createClient)({
+      space: opt.space,
+      accessToken: opt.accessToken,
+      resolveLinks: false
     });
   }
   /**
@@ -101,64 +103,14 @@ class Space {
   contentful(files, metalsmith) {
     this.files = files;
     this.metalsmith = metalsmith;
-    return _vow2.default.resolve().then(() => this.cache.invalidate()).then(() => this.scrape()).then(() => this.applyMeta()).then(() => this.makeFiles()).catch(err => {
-      dbg(err);
-    });
-  }
-
-  /**
-   * ## scrape
-   * oversees operation of scraping entire space to cache
-   * by design, there's no options to limit what get's pulled down
-   * @return {Promise}
-   */
-  scrape() {
-    return _vow2.default.resolve().then(() => this.cache.requestOrCache()).then(() => this.retrieve('content_types')).then(() => this.retrieve('entries')).then(() => this.retrieve('assets')).then(() => this.cache.resolveContentTypes()).then(() => {
+    return _vow2.default.resolve().then(() => this.cache.invalidate()).then(() => this.cache.requestOrCache()).then(() => this.client.getContentTypes()).then(contentTypes => this.cache.upsertCollection(contentTypes.items)).then(() => this.client.getEntries()).then(entries => this.cache.upsertCollection(entries.items)).then(() => this.client.getAssets()).then(assets => this.cache.upsertCollection(assets.items)).then(() => this.cache.resolveContentTypes()).then(() => {
       this.cache.count().then(count => dbg(`retrieved ${count} items`));
     }).catch(err => {
       if (err.message === 'cache only') return;
       throw err;
+    }).then(() => this.applyMeta()).then(() => this.makeFiles()).catch(err => {
+      dbg(err);
     });
-  }
-
-  /**
-   * ## retrieve
-   * async structure to drain everything from an endpoint with consecutive
-   * requests if required. Should play nice with large spaces.
-   * contentful api is fairly consistent so this works with all relevant
-   * endpoints
-   * @param {String} endpoint
-   * @return {Promise}
-   */
-  retrieve(endpoint) {
-    return (0, _promiseSpool2.default)({
-      fetch: retrieved => {
-        let url = `/spaces/${this.opt.space}/${endpoint}`;
-        return this.fetch(url, { qs: { skip: retrieved } }).then(res => {
-          if (retrieved + res.items.length >= res.total) res.items.push(null);
-          return res.items;
-        });
-      },
-      // each item returned is simply added to cache
-      worker: this.cache.upsert.bind(this.cache),
-      concurrency: this.concurrency
-    });
-  }
-
-  /**
-   * ## fetch
-   * manage a single request from contentful
-   * @param {String} url
-   * @param {Object} query
-   * @return {Promise.<Response>}
-   */
-  fetch(url, query) {
-    let defer = _vow2.default.defer();
-    this.client.get(`https://cdn.contentful.com/${url}`, query, (err, res) => {
-      if (err) return defer.reject(err);
-      defer.resolve(res);
-    });
-    return defer.promise();
   }
 
   /**

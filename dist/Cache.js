@@ -52,7 +52,7 @@ class Cache {
   }
   requestOrCache() {
     return this.count().then(count => {
-      if (this.opt.cache && count) {
+      if (!this.opt.invalidateCache && count) {
         dbg('skipping request, read from cache');
         throw new Error('cache only');
       } else {
@@ -95,6 +95,10 @@ class Cache {
     return defer.promise();
   }
 
+  upsertCollection(docs) {
+    return _vow2.default.all(docs.map(doc => this.upsert(doc)));
+  }
+
   /**
    * ## upsert
    * create or update doc in cache. Works for `ContentType`, `Asset`, or `Entry`
@@ -103,7 +107,13 @@ class Cache {
    */
   upsert(doc) {
     let defer = _vow2.default.defer();
-    this.db.update({ 'sys.id': doc.sys.id }, doc, { upsert: true }, defer.resolve.bind(defer));
+    this.db.update({ 'sys.id': doc.sys.id }, doc, { upsert: true }, (err, res) => {
+      // if (err) dbg(err)
+      if (err) return defer.reject(err);
+      defer.resolve(res);
+    }
+    // defer.resolve.bind(defer)
+    );
     return defer.promise();
   }
 
