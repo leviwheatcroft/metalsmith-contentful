@@ -291,8 +291,20 @@ contentful
     .then(<span class="hljs-function">(<span class="hljs-params">entries</span>) =&gt;</span> <span class="hljs-keyword">this</span>.cache.upsertCollection(entries.items))
     .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.client.getAssets())
     .then(<span class="hljs-function">(<span class="hljs-params">assets</span>) =&gt;</span> <span class="hljs-keyword">this</span>.cache.upsertCollection(assets.items))
-    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.cache.resolveContentTypes())
-    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-6" id="section-6"></a>
+</div>
+<p>.then(() =&gt; this.cache.resolveContentTypes())</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
       <span class="hljs-keyword">this</span>.cache.count()
       .then(<span class="hljs-function">(<span class="hljs-params">count</span>) =&gt;</span> dbg(<span class="hljs-string">`retrieved <span class="hljs-subst">${count}</span> items`</span>))
     })
@@ -351,7 +363,7 @@ metalsmith meta in an object keyed by contentful id</p>
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-7" id="section-7"></a>
+  <a class="pilcrow" href="#section-8" id="section-8"></a>
 </div>
 <p>key meta by id, omit <code>sys</code></p>
 
@@ -402,14 +414,19 @@ makeFiles
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-9" id="section-9"></a>
+  <a class="pilcrow" href="#section-10" id="section-10"></a>
 </div>
 <p>for convenience, you can just pass a contentType instead of a query</p>
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> query === <span class="hljs-string">'string'</span>) query = {<span class="hljs-string">'sys.contentType.name'</span>: query}
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.find(query, <span class="hljs-keyword">this</span>.opt.resolveDepth)
+          <pre class="javascript">    <span class="hljs-keyword">return</span> vow.resolve()
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> query === <span class="hljs-string">'string'</span>) {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.findByContentType(query, <span class="hljs-keyword">this</span>.opt.resolveDepth)
+      }
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.find(query, <span class="hljs-keyword">this</span>.opt.resolveDepth)
+    })
     .then(<span class="hljs-function">(<span class="hljs-params">docs</span>) =&gt;</span> {
       docs.forEach(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> {
         <span class="hljs-keyword">let</span> file = <span class="hljs-keyword">this</span>.coerce(doc.fields)
@@ -420,7 +437,7 @@ makeFiles
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-10" id="section-10"></a>
+  <a class="pilcrow" href="#section-11" id="section-11"></a>
 </div>
 <p>attach to metalsmith files structure</p>
 
@@ -484,7 +501,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-12" id="section-12"></a>
+  <a class="pilcrow" href="#section-13" id="section-13"></a>
 </div>
 <p>the contentful example spaces use <code>body</code> for <code>content</code></p>
 
@@ -498,7 +515,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-13" id="section-13"></a>
+  <a class="pilcrow" href="#section-14" id="section-14"></a>
 </div>
 <p>many plugins expect <code>contents</code> to be a <code>Buffer</code></p>
 
@@ -512,7 +529,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-14" id="section-14"></a>
+  <a class="pilcrow" href="#section-15" id="section-15"></a>
 </div>
 <p>convert all ISO_8601 strings to moments &lt;-- handy!!</p>
 
@@ -531,13 +548,13 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15"></a>
+  <a class="pilcrow" href="#section-16" id="section-16"></a>
 </div>
-<p>slug-to-the-fi, preseciptive, but consumers can easily over write</p>
+<p>slug-to-the-fi</p>
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">    file.slug = slugify(file.title, {<span class="hljs-attr">lower</span>: <span class="hljs-literal">true</span>})
+          <pre class="javascript">    file.slug = slugify(file.title)
 </pre>
         </td>
       </tr>
@@ -545,7 +562,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16"></a>
+  <a class="pilcrow" href="#section-17" id="section-17"></a>
 </div>
 <p>mangle path</p>
 
@@ -559,7 +576,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17"></a>
+  <a class="pilcrow" href="#section-18" id="section-18"></a>
 </div>
 <p>apply passed in fn</p>
 

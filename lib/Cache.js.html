@@ -137,32 +137,44 @@ invalidate
       }
     })
   }
-  resolveContentTypes () {
-    <span class="hljs-keyword">let</span> defer = vow.defer()
-    <span class="hljs-keyword">this</span>.db.find({<span class="hljs-string">'sys.type'</span>: <span class="hljs-string">'Entry'</span>}, (err, docs) =&gt; {
-      <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
-      docs.push(<span class="hljs-literal">null</span>)
-      promiseSpool({
-        <span class="hljs-attr">fetch</span>: <span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> vow.resolve(docs),
-        <span class="hljs-attr">worker</span>: <span class="hljs-function">(<span class="hljs-params">entry</span>) =&gt;</span> {
-          <span class="hljs-keyword">let</span> defer = vow.defer()
-          <span class="hljs-keyword">this</span>.db.findOne(
-            {<span class="hljs-string">'sys.id'</span>: entry.sys.contentType.sys.id},
-            (err, contentType) =&gt; {
-              <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
-              entry.sys.contentType = contentType
-              <span class="hljs-keyword">this</span>.upsert(entry)
-              .then(defer.resolve.bind(defer))
-            }
-          )
-        },
-        <span class="hljs-attr">concurrency</span>: <span class="hljs-keyword">this</span>.opt.concurrency
-      })
-      .then(defer.resolve.bind(defer))
-    })
-    <span class="hljs-keyword">return</span> defer.promise()
-  }
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-3" id="section-3"></a>
+</div>
+<p>resolveContentTypes () {
+let defer = vow.defer()
+this.db.find({'sys.type': 'Entry'}, (err, docs) =&gt; {
+if (err) return defer.reject(err)
+docs.push(null)
+promiseSpool({
+fetch: () =&gt; vow.resolve(docs),
+worker: (entry) =&gt; {
+let defer = vow.defer()
+this.db.findOne(
+{'sys.id': entry.sys.contentType.sys.id},
+(err, contentType) =&gt; {
+if (err) return defer.reject(err)
+entry.sys.contentType = contentType
+this.upsert(entry)
+.then(defer.resolve.bind(defer))
+}
+)
+},
+concurrency: this.opt.concurrency
+})
+.then(defer.resolve.bind(defer))
+})
+return defer.promise()
+}</p>
 
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">
 </pre>
         </td>
       </tr>
@@ -255,7 +267,7 @@ upsert
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-5" id="section-5"></a>
+  <a class="pilcrow" href="#section-6" id="section-6"></a>
 </div>
 <p>if (err) dbg(err)</p>
 
@@ -271,7 +283,7 @@ upsert
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-6" id="section-6"></a>
+  <a class="pilcrow" href="#section-7" id="section-7"></a>
 </div>
 <p>defer.resolve.bind(defer)</p>
 
@@ -321,7 +333,7 @@ find
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-8" id="section-8"></a>
+  <a class="pilcrow" href="#section-9" id="section-9"></a>
 </div>
 <p>half assed callback implementation for numpties</p>
 
@@ -330,6 +342,21 @@ find
           <pre class="javascript">      <span class="hljs-keyword">if</span> (callback) process.nextTick(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> callback(docs))
       <span class="hljs-keyword">return</span> docs
     })
+  }
+
+  findByContentType (contentType, resolveDepth, callback) {
+    <span class="hljs-keyword">return</span> vow.resolve()
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.findOne({
+        <span class="hljs-string">'sys.type'</span>: <span class="hljs-string">'ContentType'</span>,
+        <span class="hljs-string">'name'</span>: contentType
+      })
+    })
+    .then(<span class="hljs-function">(<span class="hljs-params">contentType</span>) =&gt;</span> {
+      <span class="hljs-keyword">let</span> query = {<span class="hljs-string">'sys.contentType.sys.id'</span>: contentType.sys.id}
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.find(query, resolveDepth)
+    })
+    .catch(<span class="hljs-function">(<span class="hljs-params">err</span>) =&gt;</span> dbg(err))
   }
 
 </pre>
@@ -355,14 +382,20 @@ findOne
         <td class="code highlight">
           <pre class="javascript">  findOne (query, resolveDepth, callback) {
     <span class="hljs-keyword">let</span> defer = vow.defer()
-    <span class="hljs-keyword">this</span>.db.find(query, (err, doc) =&gt; {
+    <span class="hljs-keyword">this</span>.db.findOne(query, (err, doc) =&gt; {
       <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
       defer.resolve(doc)
     })
     <span class="hljs-keyword">return</span> defer.promise()
     .then(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> {
-      <span class="hljs-keyword">if</span> (resolveDepth) <span class="hljs-keyword">this</span>.resolve(doc, resolveDepth)
+      <span class="hljs-keyword">if</span> (!doc) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'no doc'</span>)
+      <span class="hljs-keyword">delete</span> doc._id
+      <span class="hljs-keyword">if</span> (resolveDepth) <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.resolve(doc, resolveDepth)
       <span class="hljs-keyword">return</span> doc
+    })
+    .catch(<span class="hljs-function">(<span class="hljs-params">err</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (err.message === <span class="hljs-string">'no doc'</span>) <span class="hljs-keyword">return</span>
+      <span class="hljs-keyword">throw</span> err
     })
     .then(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> {
       <span class="hljs-keyword">if</span> (callback) process.nextTick(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> callback(doc))
@@ -446,17 +479,36 @@ resolve
         </td>
         <td class="code highlight">
           <pre class="javascript">  resolve (doc, depth) {
+    <span class="hljs-keyword">if</span> (!doc) {
+      dbg(doc)
+      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'resolve called with no doc'</span>)
+    }
     <span class="hljs-keyword">let</span> resolvers = []
+    <span class="hljs-keyword">const</span> isLink = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">object</span>) </span>{
+      <span class="hljs-keyword">return</span> object &amp;&amp; object.sys &amp;&amp; object.sys.type === <span class="hljs-string">'Link'</span>
+    }
     <span class="hljs-built_in">Object</span>.keys(doc).forEach(<span class="hljs-function">(<span class="hljs-params">key</span>) =&gt;</span> {
-      <span class="hljs-keyword">if</span> (key === <span class="hljs-string">'sys'</span>) <span class="hljs-keyword">return</span>
-      <span class="hljs-keyword">if</span> (doc[key] === <span class="hljs-literal">null</span>) <span class="hljs-keyword">return</span>
-      <span class="hljs-keyword">if</span> (doc[key].sys) {
+      <span class="hljs-keyword">if</span> (isLink(doc[key])) {
         resolvers.push(
-          <span class="hljs-keyword">this</span>.byId(doc[key].sys.id).then(<span class="hljs-function">(<span class="hljs-params">child</span>) =&gt;</span> {
-            doc[key] = child.fields
+          <span class="hljs-keyword">this</span>.findOne({<span class="hljs-string">'sys.id'</span>: doc[key].sys.id}, depth - <span class="hljs-number">1</span>).then(<span class="hljs-function">(<span class="hljs-params">child</span>) =&gt;</span> {
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-13" id="section-13"></a>
+</div>
+<p>fail silently if target id doesn't exist
+for example, we don't have the 'space' itself</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">            <span class="hljs-keyword">if</span> (child) doc[key] = child
           })
         )
-      } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> doc[key] === <span class="hljs-string">'object'</span> &amp;&amp; depth) {
+      } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (doc[key] &amp;&amp; <span class="hljs-keyword">typeof</span> doc[key] === <span class="hljs-string">'object'</span> &amp;&amp; depth &gt; <span class="hljs-number">0</span>) {
         resolvers.push(
           <span class="hljs-keyword">this</span>.resolve(doc[key], depth - <span class="hljs-number">1</span>).then(<span class="hljs-function">(<span class="hljs-params">res</span>) =&gt;</span> {
             doc[key] = res
@@ -464,7 +516,9 @@ resolve
         )
       }
     })
-    <span class="hljs-keyword">return</span> vow.all(resolvers).then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> doc)
+    <span class="hljs-keyword">return</span> vow.all(resolvers).then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+      <span class="hljs-keyword">return</span> doc
+    })
   }
 
 </pre>
@@ -500,18 +554,18 @@ byId
 </div>
 </div>
 </div>
+byId (id) {
+  let defer = vow.defer()
+  this.db.findOne({'sys.id': id}, (err, doc) => {
+    if (err) return defer.reject(err)
+    defer.resolve(doc)
+  })
+  return defer.promise()
+}
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">  byId (id) {
-    <span class="hljs-keyword">let</span> defer = vow.defer()
-    <span class="hljs-keyword">this</span>.db.findOne({<span class="hljs-string">'sys.id'</span>: id}, (err, doc) =&gt; {
-      <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
-      defer.resolve(doc)
-    })
-    <span class="hljs-keyword">return</span> defer.promise()
-  }
-}
+          <pre class="javascript">}
 
 </pre>
         </td>
