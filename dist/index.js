@@ -103,7 +103,9 @@ class Space {
   contentful(files, metalsmith) {
     this.files = files;
     this.metalsmith = metalsmith;
-    return _vow2.default.resolve().then(() => this.cache.invalidate()).then(() => this.cache.requestOrCache()).then(() => this.client.getContentTypes()).then(contentTypes => this.cache.upsertCollection(contentTypes.items)).then(() => this.client.getEntries()).then(entries => this.cache.upsertCollection(entries.items)).then(() => this.client.getAssets()).then(assets => this.cache.upsertCollection(assets.items)).then(() => this.cache.resolveContentTypes()).then(() => {
+    return _vow2.default.resolve().then(() => this.cache.invalidate()).then(() => this.cache.requestOrCache()).then(() => this.client.getContentTypes()).then(contentTypes => this.cache.upsertCollection(contentTypes.items)).then(() => this.client.getEntries()).then(entries => this.cache.upsertCollection(entries.items)).then(() => this.client.getAssets()).then(assets => this.cache.upsertCollection(assets.items))
+    // .then(() => this.cache.resolveContentTypes())
+    .then(() => {
       this.cache.count().then(count => dbg(`retrieved ${count} items`));
     }).catch(err => {
       if (err.message === 'cache only') return;
@@ -142,8 +144,12 @@ class Space {
     if (!this.opt.files) return;
     let query = this.opt.files.query;
     // for convenience, you can just pass a contentType instead of a query
-    if (typeof query === 'string') query = { 'sys.contentType.name': query };
-    return this.cache.find(query, this.opt.resolveDepth).then(docs => {
+    return _vow2.default.resolve().then(() => {
+      if (typeof query === 'string') {
+        return this.cache.findByContentType(query, this.opt.resolveDepth);
+      }
+      return this.cache.find(query, this.opt.resolveDepth);
+    }).then(docs => {
       docs.forEach(doc => {
         let file = this.coerce(doc.fields);
         // attach to metalsmith files structure
@@ -173,8 +179,8 @@ class Space {
       if (!date.isValid()) return;
       file[key] = date;
     });
-    // slug-to-the-fi, preseciptive, but consumers can easily over write
-    file.slug = (0, _slugify2.default)(file.title, { lower: true });
+    // slug-to-the-fi
+    file.slug = (0, _slugify2.default)(file.title);
     // mangle path
     file.path = (0, _path.join)(this.opt.files.destPath, `${file.slug}.md`);
     // apply passed in fn

@@ -60,26 +60,31 @@ class Cache {
       }
     });
   }
-  resolveContentTypes() {
-    let defer = _vow2.default.defer();
-    this.db.find({ 'sys.type': 'Entry' }, (err, docs) => {
-      if (err) return defer.reject(err);
-      docs.push(null);
-      (0, _promiseSpool2.default)({
-        fetch: () => _vow2.default.resolve(docs),
-        worker: entry => {
-          let defer = _vow2.default.defer();
-          this.db.findOne({ 'sys.id': entry.sys.contentType.sys.id }, (err, contentType) => {
-            if (err) return defer.reject(err);
-            entry.sys.contentType = contentType;
-            this.upsert(entry).then(defer.resolve.bind(defer));
-          });
-        },
-        concurrency: this.opt.concurrency
-      }).then(defer.resolve.bind(defer));
-    });
-    return defer.promise();
-  }
+  // resolveContentTypes () {
+  //   let defer = vow.defer()
+  //   this.db.find({'sys.type': 'Entry'}, (err, docs) => {
+  //     if (err) return defer.reject(err)
+  //     docs.push(null)
+  //     promiseSpool({
+  //       fetch: () => vow.resolve(docs),
+  //       worker: (entry) => {
+  //         let defer = vow.defer()
+  //         this.db.findOne(
+  //           {'sys.id': entry.sys.contentType.sys.id},
+  //           (err, contentType) => {
+  //             if (err) return defer.reject(err)
+  //             entry.sys.contentType = contentType
+  //             this.upsert(entry)
+  //             .then(defer.resolve.bind(defer))
+  //           }
+  //         )
+  //       },
+  //       concurrency: this.opt.concurrency
+  //     })
+  //     .then(defer.resolve.bind(defer))
+  //   })
+  //   return defer.promise()
+  // }
 
   /**
    * ## count
@@ -137,19 +142,36 @@ class Cache {
     });
   }
 
+  findByContentType(contentType, resolveDepth, callback) {
+    return _vow2.default.resolve().then(() => {
+      return this.findOne({
+        'sys.type': 'ContentType',
+        'name': contentType
+      });
+    }).then(contentType => {
+      let query = { 'sys.contentType.sys.id': contentType.sys.id };
+      return this.find(query, resolveDepth);
+    }).catch(err => dbg(err));
+  }
+
   /**
    * ## findOne
    *
    */
   findOne(query, resolveDepth, callback) {
     let defer = _vow2.default.defer();
-    this.db.find(query, (err, doc) => {
+    this.db.findOne(query, (err, doc) => {
       if (err) return defer.reject(err);
       defer.resolve(doc);
     });
     return defer.promise().then(doc => {
-      if (resolveDepth) this.resolve(doc, resolveDepth);
+      if (!doc) throw new Error('no doc');
+      delete doc._id;
+      if (resolveDepth) return this.resolve(doc, resolveDepth);
       return doc;
+    }).catch(err => {
+      if (err.message === 'no doc') return;
+      throw err;
     }).then(doc => {
       if (callback) process.nextTick(() => callback(doc));
       return doc;
@@ -179,21 +201,30 @@ class Cache {
    * @return {Promise.<Object>} resolves to doc
    */
   resolve(doc, depth) {
+    if (!doc) {
+      dbg(doc);
+      throw new Error('resolve called with no doc');
+    }
     let resolvers = [];
+    const isLink = function isLink(object) {
+      return object && object.sys && object.sys.type === 'Link';
+    };
     Object.keys(doc).forEach(key => {
-      if (key === 'sys') return;
-      if (doc[key] === null) return;
-      if (doc[key].sys) {
-        resolvers.push(this.byId(doc[key].sys.id).then(child => {
-          doc[key] = child.fields;
+      if (isLink(doc[key])) {
+        resolvers.push(this.findOne({ 'sys.id': doc[key].sys.id }, depth - 1).then(child => {
+          // fail silently if target id doesn't exist
+          // for example, we don't have the 'space' itself
+          if (child) doc[key] = child;
         }));
-      } else if (typeof doc[key] === 'object' && depth) {
+      } else if (doc[key] && typeof doc[key] === 'object' && depth > 0) {
         resolvers.push(this.resolve(doc[key], depth - 1).then(res => {
           doc[key] = res;
         }));
       }
     });
-    return _vow2.default.all(resolvers).then(() => doc);
+    return _vow2.default.all(resolvers).then(() => {
+      return doc;
+    });
   }
 
   /**
@@ -202,13 +233,13 @@ class Cache {
    * @param {String} id
    * @return {Promise.<Object>} resolves to doc
    */
-  byId(id) {
-    let defer = _vow2.default.defer();
-    this.db.findOne({ 'sys.id': id }, (err, doc) => {
-      if (err) return defer.reject(err);
-      defer.resolve(doc);
-    });
-    return defer.promise();
-  }
+  // byId (id) {
+  //   let defer = vow.defer()
+  //   this.db.findOne({'sys.id': id}, (err, doc) => {
+  //     if (err) return defer.reject(err)
+  //     defer.resolve(doc)
+  //   })
+  //   return defer.promise()
+  // }
 }
 exports.default = Cache;
