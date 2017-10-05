@@ -334,7 +334,7 @@ setLocale
         <td class="code highlight">
           <pre class="javascript">  setLocale (object) {
     <span class="hljs-keyword">let</span> locale = <span class="hljs-keyword">this</span>.opt.locale
-    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> object !== <span class="hljs-string">'object'</span>) <span class="hljs-keyword">return</span> object
+    <span class="hljs-keyword">if</span> (!object || <span class="hljs-keyword">typeof</span> object !== <span class="hljs-string">'object'</span>) <span class="hljs-keyword">return</span> object
     <span class="hljs-built_in">Object</span>.keys(object).forEach(<span class="hljs-function">(<span class="hljs-params">key</span>) =&gt;</span> {
       <span class="hljs-keyword">if</span> (key === <span class="hljs-string">'sys'</span>) <span class="hljs-keyword">return</span>
       <span class="hljs-keyword">if</span> (object[key] === <span class="hljs-literal">null</span>) <span class="hljs-keyword">return</span>
