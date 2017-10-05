@@ -50,8 +50,6 @@ describe('metalsmith-contentful', () => {
         config.get('metalsmith-contentful')
       )))
       .use((files, metalsmith) => {
-        // dbg(metalsmith.metadata().contentful)
-        dbg(Object.keys(files))
         let file = files['articles/Down-the-Rabbit-Hole.md']
         assert.ok(file)
         assert.equal(file.category[0].fields.title, 'Literature') // resolved
@@ -64,31 +62,31 @@ describe('metalsmith-contentful', () => {
       })
     })
   }).timeout(0)
-  // it('should read from cache', function (done) {
-  //   let test = this
-  //   Metalsmith('test/fixtures/scrape')
-  //   .use(contentful(Object.assign(
-  //     {
-  //       files: {
-  //         destPath: 'articles',
-  //         query: 'Post'
-  //       },
-  //       invalidateCache: false
-  //     },
-  //     config.get('metalsmith-contentful')
-  //   )))
-  //   .use((files, metalsmith) => {
-  //     let file = files['articles/down-the-rabbit-hole.md']
-  //     assert.equal(test.requestSpy.callCount, 0)
-  //     assert.ok(file)
-  //     assert.equal(file.category[0].fields.title, 'Literature') // resolved
-  //     assert.ok(Object.keys(metalsmith.metadata().contentful).length)
-  //   })
-  //   .build((err, files) => {
-  //     if (err) return done(err)
-  //     done()
-  //   })
-  // }).timeout(0)
+  it('should read from cache', function (done) {
+    let test = this
+    Metalsmith('test/fixtures/scrape')
+    .use(contentful(Object.assign(
+      {
+        files: {
+          destPath: 'articles',
+          query: 'Post'
+        },
+        cache: true
+      },
+      config.get('metalsmith-contentful')
+    )))
+    .use((files, metalsmith) => {
+      let file = files['articles/Down-the-Rabbit-Hole.md']
+      assert.equal(test.requestSpy.callCount, 0)
+      assert.ok(file)
+      assert.equal(file.category[0].fields.title, 'Literature') // resolved
+      assert.ok(Object.keys(metalsmith.metadata().contentful).length)
+    })
+    .build((err, files) => {
+      if (err) return done(err)
+      done()
+    })
+  }).timeout(0)
 
   /**
    * resolving links in this plugin isn't ideal, this test seeks to ensure that
