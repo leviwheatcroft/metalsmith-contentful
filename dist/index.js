@@ -286,7 +286,7 @@ class Space {
       file[key] = date;
     });
     // slug-to-the-fi
-    file.slug = (0, _slugify2.default)(file.title);
+    file.slug = file.title ? (0, _slugify2.default)(file.title) : '';
     // mangle path
     file.path = (0, _path.join)(this.opt.files.destPath, `${file.slug}.md`);
     // apply passed in fn

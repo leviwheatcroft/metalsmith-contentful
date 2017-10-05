@@ -11,7 +11,9 @@ This is not the official [contentful-metalsmith][contentful-metalsmith] plugin.
 Highlights:
 
  * caches contentful data
- * query from metalsmith build call, not from file yaml meta
+ * configure from metalsmith build call, not from file yaml meta
+ * uses fancy sync api
+ * allows complex queries of data
 
 See the [annotated source][annotated source] or [github repo][github repo]
 
@@ -45,7 +47,8 @@ Metalsmith('src')
       destPath: 'articles',
       query: 'Post'
     },
-    cache: process.env['NODE_ENV'] !== 'production'
+    cache: process.env['NODE_ENV'] !== 'production',
+    locale: 'en-AU' // it's important you get this right.
   })
 )
 .build( ... )
@@ -56,7 +59,7 @@ Metalsmith('src')
  * `space` {String} (required) id of contentful space you wish to scrape
  * `destPath` {String} (required) the path under which you want to place the   scraped files
  * `cache` {Boolean|String} (default: `true`) cache mode
- * `locale` {String} (default: `en-US`) locale
+ * `locale` {String} (default: `en-US`) locale (*!important*)
  * `files` {Object} (optional) [file creation]() opts
  * `files.destPath` {String} path under which to place files
  * `files.coerce` {Function} fn to convert files
@@ -132,14 +135,29 @@ Metalsmith('src')
 ### content types
 These will only be retrieved once after cache is invalidated, so if you're using sync mode, and change or add content types, you'll need to invalidate your cache to pull down the updated content types.
 
+### locales
+This plugin depends heavily on contentful's sync api, which returns data nested under locale strings like this:
+
+```
+{
+  sys: {...},
+  fields: {
+    title: {
+      'en-US': 'some title'
+    }
+  }
+}
+```
+
+There might be a better way to deal with this (see [locale issue][locale issue]) but for the moment you need to pass in a `locale` option which will be used to localise the above data structure so `fields.title === 'some title'`.
+
 ### Author
 
 Levi Wheatcroft <levi@wht.cr>
 
 ### Contributing
 
-Contributions welcome; Please submit all pull requests against the master
-branch.
+Contributions welcome; Please submit all pull requests against the master branch.
 
 ### License
 
@@ -152,3 +170,4 @@ branch.
 [metalsmith-debug-ui]: https://github.com/leviwheatcroft/metalsmith-debug-ui "metalsmith-debug-ui repo"
 [contentful api]: https://www.contentful.com/developers/docs/references/content-delivery-api/ "contentful api"
 [parse-duration]: https://www.npmjs.com/package/parse-duration "parse-duration repo"
+[locale issue]: https://github.com/leviwheatcroft/metalsmith-contentful/issues/3 "locale issue"
