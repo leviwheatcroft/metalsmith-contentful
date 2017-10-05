@@ -47,26 +47,34 @@
       </div>
 
       <div class="heading h3">
-        <a href="#resolving-links">resolving links</a>
+        <a href="#contentful-data-structure">contentful data structure</a>
+      </div>
+
+      <div class="heading h3">
+        <a href="#cache-modes">cache modes</a>
       </div>
 
       <div class="heading h3">
         <a href="#queries">queries</a>
       </div>
 
-      <div class="heading h2">
+      <div class="heading h3">
         <a href="#file-creation">file creation</a>
       </div>
 
-      <div class="heading h2">
+      <div class="heading h3">
+        <a href="#content-types">content types</a>
+      </div>
+
+      <div class="heading h3">
         <a href="#author">Author</a>
       </div>
 
-      <div class="heading h2">
+      <div class="heading h3">
         <a href="#contributing">Contributing</a>
       </div>
 
-      <div class="heading h2">
+      <div class="heading h3">
         <a href="#license">License</a>
       </div>
 
@@ -96,9 +104,7 @@ metalsmith-contentful
 motivation
   </h2>
 </div>
-<p>I really need caching from remote apis to speed up the metalsmith build
-process. I couldn't see a way to modify the official plugin to support caching
-so made something from scratch.</p>
+<p>I really need caching from remote apis to speed up the metalsmith build process. I couldn't see a way to modify the official plugin to support caching so made something from scratch.</p>
 <div class="pilwrap" id="install">
   <h2>
     <a href="#install" name="install" class="pilcrow"></a>
@@ -131,8 +137,7 @@ example
       <span class="hljs-attr">destPath</span>: <span class="hljs-string">'articles'</span>,
       <span class="hljs-attr">query</span>: <span class="hljs-string">'Post'</span>
     },
-    <span class="hljs-attr">resolveDepth</span>: <span class="hljs-number">2</span>,
-    <span class="hljs-attr">invalidateCache</span>: process.env[<span class="hljs-string">'NODE_ENV'</span>] === <span class="hljs-string">'production'</span>
+    <span class="hljs-attr">cache</span>: process.env[<span class="hljs-string">'NODE_ENV'</span>] !== <span class="hljs-string">'production'</span>
   })
 )
 .build( ... )
@@ -145,49 +150,41 @@ options
 </div>
 <ul>
 <li><code>space</code> {String} (required) id of contentful space you wish to scrape</li>
-<li><code>destPath</code> {String} (required) the path under which you want to place the
-scraped files</li>
-<li><code>resolveDepth</code> {Number} (default: 2) recursion for <a href="#resolving-links.html">resolving links</a></li>
-<li><code>concurrency</code> {Number} (default: 3) concurrent cache ops (memory rw)</li>
-<li><code>parse</code> {Function} function to convert contentful result to metalsmith file</li>
-<li><code>invalidateCache</code> {Boolean} clear cache on start</li>
+<li><code>destPath</code> {String} (required) the path under which you want to place the   scraped files</li>
+<li><code>cache</code> {Boolean|String} (default: <code>true</code>) cache mode</li>
+<li><code>locale</code> {String} (default: <code>en-US</code>) locale</li>
 <li><code>files</code> {Object} (optional) <a href=".html">file creation</a> opts</li>
 <li><code>files.destPath</code> {String} path under which to place files</li>
 <li><code>files.coerce</code> {Function} fn to convert files</li>
 <li><code>files.query</code> {String|Object} <a href="#queries.html">query</a> for files to create</li>
 </ul>
-<div class="pilwrap" id="resolving-links">
+<div class="pilwrap" id="contentful-data-structure">
   <h3>
-    <a href="#resolving-links" name="resolving-links" class="pilcrow"></a>
-resolving links
+    <a href="#contentful-data-structure" name="contentful-data-structure" class="pilcrow"></a>
+contentful data structure
   </h3>
 </div>
-<p>Items in a contentful space can reference other items. By default, up to the second level of each item is resolved. You can increase this, but if you have circular references in your structure then doing so will dramatically slow things down.</p>
-<p>Suppose in your content model you add a <code>coverImage</code> field which links to media stored on contentful. Provided the entry has been resolved, you'll be able to access the url for that file like this:</p>
-<pre><code>&lt;header class=&quot;intro-header&quot; style=&quot;background-image: url('{{coverImage.file.url}}')&quot;&gt;
-</code></pre>
 <p>Finding different properties in the returned data may not be intuitive. If you're struggling you should try <a href="https://github.com/leviwheatcroft/metalsmith-debug-ui" title="metalsmith-debug-ui repo">metalsmith-debug-ui</a>, and take a look at the data structures returned by the <a href="https://www.contentful.com/developers/docs/references/content-delivery-api/" title="contentful api">contentful api</a>.</p>
+<div class="pilwrap" id="cache-modes">
+  <h3>
+    <a href="#cache-modes" name="cache-modes" class="pilcrow"></a>
+cache modes
+  </h3>
+</div>
+<ul>
+<li><em>full cache</em> <code>true</code> - in this mode everything will be pulled down once, and no further requests to the contentful api will be issued in future builds</li>
+<li><em>no cache</em> <code>false</code> - this invalidates cache every build</li>
+<li><em>sync</em> <code>{string}</code> - any string understood by <a href="https://www.npmjs.com/package/parse-duration" title="parse-duration repo">parse-duration</a>. Will use the sync api to request updated items if last sync is older than the duration specified.</li>
+</ul>
 <div class="pilwrap" id="queries">
   <h3>
     <a href="#queries" name="queries" class="pilcrow"></a>
 queries
   </h3>
 </div>
-<p>This plugin doesn't use contentful queries, it just pulls down everything and
-stores it in your cache. You can then query your cache with
-<a href="https://github.com/louischatriot/nedb#basic-querying" title="nedb readme">nedb queries</a>. Items are stored in cache in the same form
-they're retrieved from contentful with 1 exception, the <code>sys.contentType</code>
-property on entries is resolved, just to allow you to query by contentType more easily.
-If you're struggling with queries consider using something like
-<a href="https://github.com/leviwheatcroft/metalsmith-debug-ui" title="metalsmith-debug-ui repo">metalsmith-debug-ui</a> to take a look at the structure of
-data stored in metadata.</p>
+<p>This plugin doesn't use contentful queries, it just pulls down everything and stores it in your cache. You can then query your cache with <a href="https://github.com/louischatriot/nedb#basic-querying" title="nedb readme">nedb queries</a>. Items are stored in cache in the same form they're retrieved from contentful.</p>
 <p>The <code>contentful</code> property in metadata exposes two functions <code>find</code> and <code>findOne</code>. Consider
-the following example. Both return promises which resolve to the query result, and both accept the following options:</p>
-<ul>
-<li>query {Object} (required) nedb query</li>
-<li>resolveDepth {Number} (default: 0) recursion for link resolving</li>
-<li>callback {Function} (optional) if that's how you roll</li>
-</ul>
+the following example. Both return promises which resolve to the query result, and both accept a single parameter: a nedb search query.</p>
 <p>Usage example:</p>
 <pre><code class="javascript">Metalsmith(<span class="hljs-string">'src'</span>)
 .use(
@@ -198,8 +195,7 @@ the following example. Both return promises which resolve to the query result, a
 )
 .use(<span class="hljs-function">(<span class="hljs-params">files, metalsmith</span>) =&gt;</span> {
   <span class="hljs-keyword">let</span> query = {<span class="hljs-string">'fields.file.contentType'</span>: <span class="hljs-regexp">/^image/</span>}
-  <span class="hljs-keyword">let</span> resolveDepth = <span class="hljs-number">3</span> <span class="hljs-comment">// default is 2</span>
-  <span class="hljs-keyword">return</span> metalsmith.metadata().contentful.find(query, resolveDepth)
+  <span class="hljs-keyword">return</span> metalsmith.metadata().contentful.find(query)
   .then(<span class="hljs-function">(<span class="hljs-params">images</span>) =&gt;</span> {
     <span class="hljs-keyword">let</span> imageUrls = images.map(<span class="hljs-function">(<span class="hljs-params">image</span>) =&gt;</span> image.fields.file.url)
     metalsmith.metadata().contentfulImageUrls = imageUrls
@@ -208,10 +204,10 @@ the following example. Both return promises which resolve to the query result, a
 .build( ... )
 </code></pre>
 <div class="pilwrap" id="file-creation">
-  <h2>
+  <h3>
     <a href="#file-creation" name="file-creation" class="pilcrow"></a>
 file creation
-  </h2>
+  </h3>
 </div>
 <p>This behaviour is optional. If you pass in a <code>files</code> property files will be created in the metalsmith files structure.</p>
 <p>The <code>query</code> option determines what items from the contentful space will be used to create files, it can either be a <a href="https://github.com/louischatriot/nedb#basic-querying" title="nedb readme">nedb query</a>, or the name of a ContentType.</p>
@@ -234,26 +230,33 @@ file creation
 )
 .build( ... )
 </code></pre>
+<div class="pilwrap" id="content-types">
+  <h3>
+    <a href="#content-types" name="content-types" class="pilcrow"></a>
+content types
+  </h3>
+</div>
+<p>These will only be retrieved once after cache is invalidated, so if you're using sync mode, and change or add content types, you'll need to invalidate your cache to pull down the updated content types.</p>
 <div class="pilwrap" id="author">
-  <h2>
+  <h3>
     <a href="#author" name="author" class="pilcrow"></a>
 Author
-  </h2>
+  </h3>
 </div>
 <p>Levi Wheatcroft <a href="mailto:levi@wht.cr.html">levi@wht.cr</a></p>
 <div class="pilwrap" id="contributing">
-  <h2>
+  <h3>
     <a href="#contributing" name="contributing" class="pilcrow"></a>
 Contributing
-  </h2>
+  </h3>
 </div>
 <p>Contributions welcome; Please submit all pull requests against the master
 branch.</p>
 <div class="pilwrap" id="license">
-  <h2>
+  <h3>
     <a href="#license" name="license" class="pilcrow"></a>
 License
-  </h2>
+  </h3>
 </div>
 <ul>
 <li><strong>MIT</strong> : http://opensource.org/licenses/MIT</li>

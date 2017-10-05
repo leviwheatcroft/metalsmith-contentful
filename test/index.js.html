@@ -141,25 +141,12 @@ sinon.spy(cloudinary.api, 'resources')</p>
             <span class="hljs-attr">destPath</span>: <span class="hljs-string">'articles'</span>,
             <span class="hljs-attr">query</span>: <span class="hljs-string">'Post'</span>
           },
-          <span class="hljs-attr">invalidateCache</span>: <span class="hljs-literal">true</span>
+          <span class="hljs-attr">cache</span>: <span class="hljs-literal">false</span>
         },
         config.get(<span class="hljs-string">'metalsmith-contentful'</span>)
       )))
       .use(<span class="hljs-function">(<span class="hljs-params">files, metalsmith</span>) =&gt;</span> {
-</pre>
-        </td>
-      </tr>
-    
-      <tr>
-        <td class="docs">
-          <div class="pilwrap">
-  <a class="pilcrow" href="#section-6" id="section-6"></a>
-</div>
-<p>dbg(metalsmith.metadata().contentful)</p>
-
-        </td>
-        <td class="code highlight">
-          <pre class="javascript">        <span class="hljs-keyword">let</span> file = files[<span class="hljs-string">'articles/down-the-rabbit-hole.md'</span>]
+        <span class="hljs-keyword">let</span> file = files[<span class="hljs-string">'articles/Down-the-Rabbit-Hole.md'</span>]
         assert.ok(file)
         assert.equal(file.category[<span class="hljs-number">0</span>].fields.title, <span class="hljs-string">'Literature'</span>) <span class="hljs-comment">// resolved</span>
         assert.ok(<span class="hljs-built_in">Object</span>.keys(metalsmith.metadata().contentful).length)
@@ -180,12 +167,12 @@ sinon.spy(cloudinary.api, 'resources')</p>
           <span class="hljs-attr">destPath</span>: <span class="hljs-string">'articles'</span>,
           <span class="hljs-attr">query</span>: <span class="hljs-string">'Post'</span>
         },
-        <span class="hljs-attr">invalidateCache</span>: <span class="hljs-literal">false</span>
+        <span class="hljs-attr">cache</span>: <span class="hljs-literal">true</span>
       },
       config.get(<span class="hljs-string">'metalsmith-contentful'</span>)
     )))
     .use(<span class="hljs-function">(<span class="hljs-params">files, metalsmith</span>) =&gt;</span> {
-      <span class="hljs-keyword">let</span> file = files[<span class="hljs-string">'articles/down-the-rabbit-hole.md'</span>]
+      <span class="hljs-keyword">let</span> file = files[<span class="hljs-string">'articles/Down-the-Rabbit-Hole.md'</span>]
       assert.equal(test.requestSpy.callCount, <span class="hljs-number">0</span>)
       assert.ok(file)
       assert.equal(file.category[<span class="hljs-number">0</span>].fields.title, <span class="hljs-string">'Literature'</span>) <span class="hljs-comment">// resolved</span>
@@ -204,7 +191,7 @@ sinon.spy(cloudinary.api, 'resources')</p>
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-7" id="section-7"></a>
+  <a class="pilcrow" href="#section-6" id="section-6"></a>
 </div>
 <div class="dox">
 <div class="summary">

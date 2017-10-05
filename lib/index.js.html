@@ -39,6 +39,26 @@
       </div>
 
       <div class="heading h2">
+        <a href="#getsynctoken">getSyncToken</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#getsynctime">getSyncTime</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#setsynctoken">setSyncToken</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#contenttypes">contentTypes</a>
+      </div>
+
+      <div class="heading h2">
+        <a href="#sync">sync</a>
+      </div>
+
+      <div class="heading h2">
         <a href="#applymeta">applyMeta</a>
       </div>
 
@@ -89,15 +109,21 @@ with <code>find</code> and <code>findOne</code></li>
 <span class="hljs-keyword">import</span> {
   createClient
 } <span class="hljs-keyword">from</span> <span class="hljs-string">'contentful'</span>
-<span class="hljs-keyword">import</span> promiseSpool <span class="hljs-keyword">from</span> <span class="hljs-string">'promise-spool'</span>
 <span class="hljs-keyword">import</span> {
   join
 } <span class="hljs-keyword">from</span> <span class="hljs-string">'path'</span>
 <span class="hljs-keyword">import</span> slugify <span class="hljs-keyword">from</span> <span class="hljs-string">'slugify'</span>
 <span class="hljs-keyword">import</span> Cache <span class="hljs-keyword">from</span> <span class="hljs-string">'./Cache'</span>
 <span class="hljs-keyword">import</span> moment <span class="hljs-keyword">from</span> <span class="hljs-string">'moment'</span>
+<span class="hljs-keyword">import</span> parse <span class="hljs-keyword">from</span> <span class="hljs-string">'parse-duration'</span>
+<span class="hljs-keyword">import</span> {
+  readFile,
+  writeFile,
+  stat
+} <span class="hljs-keyword">from</span> <span class="hljs-string">'fs'</span>
 
 <span class="hljs-keyword">const</span> dbg = debug(<span class="hljs-string">'metalsmith-contentful'</span>)
+<span class="hljs-keyword">const</span> syncTokenPath = <span class="hljs-string">'cache/syncToken'</span>
 
 </pre>
         </td>
@@ -210,8 +236,9 @@ constructor
     <span class="hljs-keyword">if</span> (!opt) err = <span class="hljs-string">'no options passed'</span>
     <span class="hljs-keyword">if</span> (!opt.space) err = <span class="hljs-string">'required option: space'</span>
     <span class="hljs-keyword">if</span> (!opt.accessToken) err = <span class="hljs-string">'required option: opt.accessToken'</span>
-    <span class="hljs-keyword">if</span> (!opt.resolveDepth) opt.resolveDepth = <span class="hljs-number">2</span>
-    <span class="hljs-keyword">if</span> (!opt.concurrency) opt.concurrency = <span class="hljs-number">3</span>
+    <span class="hljs-keyword">if</span> (!opt.locale) opt.locale = <span class="hljs-string">'en-US'</span>
+    <span class="hljs-keyword">if</span> (opt.cache === <span class="hljs-literal">undefined</span>) opt.cache = <span class="hljs-literal">true</span>
+    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> opt.cache === <span class="hljs-string">'string'</span>) opt.cache = parse(opt.cache)
     <span class="hljs-keyword">if</span> (opt.files) {
       <span class="hljs-keyword">if</span> (!opt.files.coerce) opt.files.coerce = <span class="hljs-function">(<span class="hljs-params">file</span>) =&gt;</span> file
       <span class="hljs-keyword">if</span> (!opt.files.destPath) err = <span class="hljs-string">'required option: files.destPath'</span>
@@ -236,7 +263,7 @@ constructor
           <pre class="javascript">    <span class="hljs-keyword">this</span>.client = createClient({
       <span class="hljs-attr">space</span>: opt.space,
       <span class="hljs-attr">accessToken</span>: opt.accessToken,
-      <span class="hljs-attr">resolveLinks</span>: <span class="hljs-literal">false</span>
+      <span class="hljs-attr">resolveLinks</span>: <span class="hljs-literal">true</span>
     })
   }
 </pre>
@@ -283,14 +310,8 @@ contentful
     <span class="hljs-keyword">this</span>.files = files
     <span class="hljs-keyword">this</span>.metalsmith = metalsmith
     <span class="hljs-keyword">return</span> vow.resolve()
-    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.cache.invalidate())
-    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.cache.requestOrCache())
-    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.client.getContentTypes())
-    .then(<span class="hljs-function">(<span class="hljs-params">contentTypes</span>) =&gt;</span> <span class="hljs-keyword">this</span>.cache.upsertCollection(contentTypes.items))
-    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.client.getEntries())
-    .then(<span class="hljs-function">(<span class="hljs-params">entries</span>) =&gt;</span> <span class="hljs-keyword">this</span>.cache.upsertCollection(entries.items))
-    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.client.getAssets())
-    .then(<span class="hljs-function">(<span class="hljs-params">assets</span>) =&gt;</span> <span class="hljs-keyword">this</span>.cache.upsertCollection(assets.items))
+    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.getSyncTime())
+    .then(<span class="hljs-function">(<span class="hljs-params">syncTime</span>) =&gt;</span> {
 </pre>
         </td>
       </tr>
@@ -300,22 +321,329 @@ contentful
           <div class="pilwrap">
   <a class="pilcrow" href="#section-6" id="section-6"></a>
 </div>
-<p>.then(() =&gt; this.cache.resolveContentTypes())</p>
+<p>cache set to invalidate every time</p>
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
-      <span class="hljs-keyword">this</span>.cache.count()
-      .then(<span class="hljs-function">(<span class="hljs-params">count</span>) =&gt;</span> dbg(<span class="hljs-string">`retrieved <span class="hljs-subst">${count}</span> items`</span>))
-    })
-    .catch(<span class="hljs-function">(<span class="hljs-params">err</span>) =&gt;</span> {
-      <span class="hljs-keyword">if</span> (err.message === <span class="hljs-string">'cache only'</span>) <span class="hljs-keyword">return</span>
-      <span class="hljs-keyword">throw</span> err
+          <pre class="javascript">      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.opt.cache === <span class="hljs-literal">false</span>) {
+        dbg(<span class="hljs-string">'cache mode: no cache'</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.invalidate()
+        .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.contentTypes())
+        .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.sync())
+      }
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-7" id="section-7"></a>
+</div>
+<p>cache only, no further requests</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">      <span class="hljs-keyword">if</span> (
+        syncTime &amp;&amp;
+        <span class="hljs-keyword">this</span>.opt.cache === <span class="hljs-literal">true</span>
+      ) {
+        dbg(<span class="hljs-string">'cache mode: cache only'</span>)
+        <span class="hljs-keyword">return</span>
+      }
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-8" id="section-8"></a>
+</div>
+<p>time to live set</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">      <span class="hljs-keyword">if</span> (
+        <span class="hljs-keyword">typeof</span> <span class="hljs-keyword">this</span>.opt.cache === <span class="hljs-string">'number'</span> &amp;&amp;
+        syncTime &gt; <span class="hljs-built_in">Date</span>.now() - <span class="hljs-keyword">this</span>.opt.cache
+      ) {
+        dbg(<span class="hljs-string">'cache mode: recent sync'</span>)
+        <span class="hljs-keyword">return</span>
+      }
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-9" id="section-9"></a>
+</div>
+<p>have sync token but it's older than ttl</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">      dbg(<span class="hljs-string">'cache mode: refresh'</span>)
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.getSyncToken()
+      .then(<span class="hljs-function">(<span class="hljs-params">token</span>) =&gt;</span> <span class="hljs-keyword">this</span>.sync(token))
     })
     .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.applyMeta())
     .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.makeFiles())
     .catch(<span class="hljs-function">(<span class="hljs-params">err</span>) =&gt;</span> {
       dbg(err)
+    })
+  }
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="getsynctoken">
+  <h2>
+    <a href="#getsynctoken" name="getsynctoken" class="pilcrow"></a>
+getSyncToken
+  </h2>
+</div>
+</div>
+<div class="body">
+</div>
+<div class="details">
+<div class="dox_tag_title">Returns</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name"></span>
+<span class="dox_type">Promise</span>
+</div>
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  getSyncToken () {
+    <span class="hljs-keyword">let</span> defer = vow.defer()
+    readFile(syncTokenPath, (err, token) =&gt; {
+      <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.resolve(<span class="hljs-literal">false</span>)
+      defer.resolve(token)
+    })
+    <span class="hljs-keyword">return</span> defer.promise()
+  }
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="getsynctime">
+  <h2>
+    <a href="#getsynctime" name="getsynctime" class="pilcrow"></a>
+getSyncTime
+  </h2>
+</div>
+</div>
+<div class="body">
+</div>
+<div class="details">
+<div class="dox_tag_title">Returns</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name"></span>
+<span class="dox_type">Promise.&lt;Number&gt;</span>
+<span>time of last sync in ms
+</span>
+</div>
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  getSyncTime () {
+    <span class="hljs-keyword">let</span> defer = vow.defer()
+    stat(syncTokenPath, (err, stat) =&gt; {
+      <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
+      defer.resolve(stat.mtimeMs)
+    })
+    <span class="hljs-keyword">return</span> defer.promise()
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-12" id="section-12"></a>
+</div>
+<p>file doesn't exist</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">    .catch(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-literal">false</span>)
+  }
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="setsynctoken">
+  <h2>
+    <a href="#setsynctoken" name="setsynctoken" class="pilcrow"></a>
+setSyncToken
+  </h2>
+</div>
+<p>writes sync token to file</p>
+</div>
+<div class="body">
+</div>
+<div class="details">
+<div class="dox_tag_title">Returns</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name"></span>
+<span class="dox_type">Promise</span>
+</div>
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  setSyncToken (token) {
+    <span class="hljs-keyword">let</span> defer = vow.defer()
+    writeFile(syncTokenPath, token, defer.resolve.bind(defer))
+    <span class="hljs-keyword">return</span> defer.promise()
+  }
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="contenttypes">
+  <h2>
+    <a href="#contenttypes" name="contenttypes" class="pilcrow"></a>
+contentTypes
+  </h2>
+</div>
+<p>fetch content types
+content types aren't returned by the api. This will only happen once after
+invalidating cache, types will not be requested or updated if they change</p>
+</div>
+<div class="body">
+</div>
+<div class="details">
+<div class="dox_tag_title">Returns</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name"></span>
+<span class="dox_type">Promise</span>
+</div>
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  contentTypes () {
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.client.getContentTypes()
+    .then(<span class="hljs-keyword">async</span> (response) =&gt; {
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-15" id="section-15"></a>
+</div>
+<p>dbg(response.items[0].sys)</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> type <span class="hljs-keyword">of</span> response.items) <span class="hljs-keyword">await</span> <span class="hljs-keyword">this</span>.cache.upsert(type)
+    })
+  }
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="sync">
+  <h2>
+    <a href="#sync" name="sync" class="pilcrow"></a>
+sync
+  </h2>
+</div>
+<p>request updated content</p>
+</div>
+<div class="body">
+</div>
+<div class="details">
+<div class="dox_tag_title">Params</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name">token</span>
+<span class="dox_type">String</span>
+<span>sync token returned from last call
+</span>
+</div>
+<div class="dox_tag_title">Returns</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name"></span>
+<span class="dox_type">Promise</span>
+</div>
+</div>
+</div>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  sync (token) {
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-17" id="section-17"></a>
+</div>
+<p>sync api always includes all locales :(
+https://www.contentful.com/developers/docs/concepts/locales/</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.client.sync({<span class="hljs-attr">nextSyncToken</span>: token, <span class="hljs-attr">initial</span>: !token})
+    .then(<span class="hljs-keyword">async</span> (response) =&gt; {
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-18" id="section-18"></a>
+</div>
+<p>toPlainObject still has circular refs</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">      response = <span class="hljs-built_in">JSON</span>.parse(response.stringifySafe())
+      <span class="hljs-keyword">await</span> <span class="hljs-keyword">this</span>.setSyncToken(response.nextSyncToken)
+      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> entry <span class="hljs-keyword">of</span> response.entries) <span class="hljs-keyword">await</span> <span class="hljs-keyword">this</span>.cache.upsert(entry)
+      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> asset <span class="hljs-keyword">of</span> response.assets) <span class="hljs-keyword">await</span> <span class="hljs-keyword">this</span>.cache.upsert(asset)
     })
   }
 
@@ -350,7 +678,7 @@ metalsmith meta in an object keyed by contentful id</p>
         </td>
         <td class="code highlight">
           <pre class="javascript">  applyMeta () {
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.find({}, <span class="hljs-keyword">this</span>.opt.resolveDepth)
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.find({})
     .then(<span class="hljs-function">(<span class="hljs-params">docs</span>) =&gt;</span> {
       <span class="hljs-keyword">let</span> entries = {
         <span class="hljs-attr">find</span>: <span class="hljs-keyword">this</span>.cache.find.bind(<span class="hljs-keyword">this</span>.cache),
@@ -363,7 +691,7 @@ metalsmith meta in an object keyed by contentful id</p>
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-8" id="section-8"></a>
+  <a class="pilcrow" href="#section-20" id="section-20"></a>
 </div>
 <p>key meta by id, omit <code>sys</code></p>
 
@@ -414,7 +742,7 @@ makeFiles
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-10" id="section-10"></a>
+  <a class="pilcrow" href="#section-22" id="section-22"></a>
 </div>
 <p>for convenience, you can just pass a contentType instead of a query</p>
 
@@ -423,9 +751,9 @@ makeFiles
           <pre class="javascript">    <span class="hljs-keyword">return</span> vow.resolve()
     .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
       <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> query === <span class="hljs-string">'string'</span>) {
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.findByContentType(query, <span class="hljs-keyword">this</span>.opt.resolveDepth)
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.findByContentType(query)
       }
-      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.find(query, <span class="hljs-keyword">this</span>.opt.resolveDepth)
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.find(query)
     })
     .then(<span class="hljs-function">(<span class="hljs-params">docs</span>) =&gt;</span> {
       docs.forEach(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> {
@@ -437,7 +765,7 @@ makeFiles
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-11" id="section-11"></a>
+  <a class="pilcrow" href="#section-23" id="section-23"></a>
 </div>
 <p>attach to metalsmith files structure</p>
 
@@ -501,7 +829,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-13" id="section-13"></a>
+  <a class="pilcrow" href="#section-25" id="section-25"></a>
 </div>
 <p>the contentful example spaces use <code>body</code> for <code>content</code></p>
 
@@ -515,7 +843,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-14" id="section-14"></a>
+  <a class="pilcrow" href="#section-26" id="section-26"></a>
 </div>
 <p>many plugins expect <code>contents</code> to be a <code>Buffer</code></p>
 
@@ -529,7 +857,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15"></a>
+  <a class="pilcrow" href="#section-27" id="section-27"></a>
 </div>
 <p>convert all ISO_8601 strings to moments &lt;-- handy!!</p>
 
@@ -548,7 +876,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-16" id="section-16"></a>
+  <a class="pilcrow" href="#section-28" id="section-28"></a>
 </div>
 <p>slug-to-the-fi</p>
 
@@ -562,7 +890,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17"></a>
+  <a class="pilcrow" href="#section-29" id="section-29"></a>
 </div>
 <p>mangle path</p>
 
@@ -576,7 +904,7 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-18" id="section-18"></a>
+  <a class="pilcrow" href="#section-30" id="section-30"></a>
 </div>
 <p>apply passed in fn</p>
 
