@@ -67,6 +67,10 @@
       </div>
 
       <div class="heading h3">
+        <a href="#locales">locales</a>
+      </div>
+
+      <div class="heading h3">
         <a href="#author">Author</a>
       </div>
 
@@ -95,7 +99,9 @@ metalsmith-contentful
 <p>Highlights:</p>
 <ul>
 <li>caches contentful data</li>
-<li>query from metalsmith build call, not from file yaml meta</li>
+<li>configure from metalsmith build call, not from file yaml meta</li>
+<li>uses fancy sync api</li>
+<li>allows complex queries of data</li>
 </ul>
 <p>See the <a href="https://leviwheatcroft.github.io/metalsmith-contentful" title="fancy annotated source">annotated source</a> or <a href="https://github.com/leviwheatcroft/metalsmith-contentful" title="github repo">github repo</a></p>
 <div class="pilwrap" id="motivation">
@@ -137,7 +143,8 @@ example
       <span class="hljs-attr">destPath</span>: <span class="hljs-string">'articles'</span>,
       <span class="hljs-attr">query</span>: <span class="hljs-string">'Post'</span>
     },
-    <span class="hljs-attr">cache</span>: process.env[<span class="hljs-string">'NODE_ENV'</span>] !== <span class="hljs-string">'production'</span>
+    <span class="hljs-attr">cache</span>: process.env[<span class="hljs-string">'NODE_ENV'</span>] !== <span class="hljs-string">'production'</span>,
+    <span class="hljs-attr">locale</span>: <span class="hljs-string">'en-AU'</span> <span class="hljs-comment">// it's important you get this right.</span>
   })
 )
 .build( ... )
@@ -152,7 +159,7 @@ options
 <li><code>space</code> {String} (required) id of contentful space you wish to scrape</li>
 <li><code>destPath</code> {String} (required) the path under which you want to place the   scraped files</li>
 <li><code>cache</code> {Boolean|String} (default: <code>true</code>) cache mode</li>
-<li><code>locale</code> {String} (default: <code>en-US</code>) locale</li>
+<li><code>locale</code> {String} (default: <code>en-US</code>) locale (<em>!important</em>)</li>
 <li><code>files</code> {Object} (optional) <a href=".html">file creation</a> opts</li>
 <li><code>files.destPath</code> {String} path under which to place files</li>
 <li><code>files.coerce</code> {Function} fn to convert files</li>
@@ -237,6 +244,23 @@ content types
   </h3>
 </div>
 <p>These will only be retrieved once after cache is invalidated, so if you're using sync mode, and change or add content types, you'll need to invalidate your cache to pull down the updated content types.</p>
+<div class="pilwrap" id="locales">
+  <h3>
+    <a href="#locales" name="locales" class="pilcrow"></a>
+locales
+  </h3>
+</div>
+<p>This plugin depends heavily on contentful's sync api, which returns data nested under locale strings like this:</p>
+<pre><code>{
+  sys: {...},
+  fields: {
+    title: {
+      'en-US': 'some title'
+    }
+  }
+}
+</code></pre>
+<p>There might be a better way to deal with this (see <a href="https://github.com/leviwheatcroft/metalsmith-contentful/issues/3" title="locale issue">locale issue</a>) but for the moment you need to pass in a <code>locale</code> option which will be used to localise the above data structure so <code>fields.title === 'some title'</code>.</p>
 <div class="pilwrap" id="author">
   <h3>
     <a href="#author" name="author" class="pilcrow"></a>
@@ -250,8 +274,7 @@ Author
 Contributing
   </h3>
 </div>
-<p>Contributions welcome; Please submit all pull requests against the master
-branch.</p>
+<p>Contributions welcome; Please submit all pull requests against the master branch.</p>
 <div class="pilwrap" id="license">
   <h3>
     <a href="#license" name="license" class="pilcrow"></a>

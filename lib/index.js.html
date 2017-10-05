@@ -822,7 +822,6 @@ coerce
         </td>
         <td class="code highlight">
           <pre class="javascript">  coerce (file) {
-    dbg(file)
 </pre>
         </td>
       </tr>
@@ -883,7 +882,7 @@ coerce
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">    file.slug = slugify(file.title)
+          <pre class="javascript">    file.slug = file.title ? slugify(file.title) : <span class="hljs-string">''</span>
 </pre>
         </td>
       </tr>
