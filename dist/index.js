@@ -15,10 +15,6 @@ var _vow2 = _interopRequireDefault(_vow);
 
 var _contentful = require('contentful');
 
-var _promiseSpool = require('promise-spool');
-
-var _promiseSpool2 = _interopRequireDefault(_promiseSpool);
-
 var _path = require('path');
 
 var _slugify = require('slugify');
@@ -33,18 +29,25 @@ var _moment = require('moment');
 
 var _moment2 = _interopRequireDefault(_moment);
 
+var _parseDuration = require('parse-duration');
+
+var _parseDuration2 = _interopRequireDefault(_parseDuration);
+
+var _fs = require('fs');
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * ## overview
- *  - scrape *everything* from space (no queries / filters)
- *  - store space in cache
- *  - expose everything from cache in metadata `contentful` property, along
- *    with `find` and `findOne`
- *  - add files to metalsmith `files` structure according to query
- */
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; } /**
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            * ## overview
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            *  - scrape *everything* from space (no queries / filters)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            *  - store space in cache
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            *  - expose everything from cache in metadata `contentful` property, along
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            *    with `find` and `findOne`
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            *  - add files to metalsmith `files` structure according to query
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            */
 
 const dbg = (0, _debug2.default)('metalsmith-contentful');
+const syncTokenPath = 'cache/syncToken';
 
 /**
  * ### plugin
@@ -75,8 +78,9 @@ class Space {
     if (!opt) err = 'no options passed';
     if (!opt.space) err = 'required option: space';
     if (!opt.accessToken) err = 'required option: opt.accessToken';
-    if (!opt.resolveDepth) opt.resolveDepth = 2;
-    if (!opt.concurrency) opt.concurrency = 3;
+    if (!opt.locale) opt.locale = 'en-US';
+    if (opt.cache === undefined) opt.cache = true;
+    if (typeof opt.cache === 'string') opt.cache = (0, _parseDuration2.default)(opt.cache);
     if (opt.files) {
       if (!opt.files.coerce) opt.files.coerce = file => file;
       if (!opt.files.destPath) err = 'required option: files.destPath';
@@ -89,7 +93,7 @@ class Space {
     this.client = (0, _contentful.createClient)({
       space: opt.space,
       accessToken: opt.accessToken,
-      resolveLinks: false
+      resolveLinks: true
     });
   }
   /**
@@ -103,16 +107,118 @@ class Space {
   contentful(files, metalsmith) {
     this.files = files;
     this.metalsmith = metalsmith;
-    return _vow2.default.resolve().then(() => this.cache.invalidate()).then(() => this.cache.requestOrCache()).then(() => this.client.getContentTypes()).then(contentTypes => this.cache.upsertCollection(contentTypes.items)).then(() => this.client.getEntries()).then(entries => this.cache.upsertCollection(entries.items)).then(() => this.client.getAssets()).then(assets => this.cache.upsertCollection(assets.items))
-    // .then(() => this.cache.resolveContentTypes())
-    .then(() => {
-      this.cache.count().then(count => dbg(`retrieved ${count} items`));
-    }).catch(err => {
-      if (err.message === 'cache only') return;
-      throw err;
+    return _vow2.default.resolve().then(() => this.getSyncTime()).then(syncTime => {
+      // cache set to invalidate every time
+      if (this.opt.cache === false) {
+        dbg('cache mode: no cache');
+        return this.cache.invalidate().then(() => this.contentTypes()).then(() => this.sync());
+      }
+
+      // cache only, no further requests
+      if (syncTime && this.opt.cache === true) {
+        dbg('cache mode: cache only');
+        return;
+      }
+
+      // time to live set
+      if (typeof this.opt.cache === 'number' && syncTime > Date.now() - this.opt.cache) {
+        dbg('cache mode: recent sync');
+        return;
+      }
+
+      // have sync token but it's older than ttl
+      dbg('cache mode: refresh');
+      return this.getSyncToken().then(token => this.sync(token));
     }).then(() => this.applyMeta()).then(() => this.makeFiles()).catch(err => {
       dbg(err);
     });
+  }
+
+  /**
+   * ## getSyncToken
+   * @return {Promise}
+   */
+  getSyncToken() {
+    let defer = _vow2.default.defer();
+    (0, _fs.readFile)(syncTokenPath, (err, token) => {
+      if (err) return defer.resolve(false);
+      defer.resolve(token);
+    });
+    return defer.promise();
+  }
+
+  /**
+   * ## getSyncTime
+   * @return {Promise.<Number>} time of last sync in ms
+   */
+  getSyncTime() {
+    let defer = _vow2.default.defer();
+    (0, _fs.stat)(syncTokenPath, (err, stat) => {
+      if (err) return defer.reject(err);
+      defer.resolve(stat.mtimeMs);
+    });
+    return defer.promise()
+    // file doesn't exist
+    .catch(() => false);
+  }
+
+  /**
+   * ## setSyncToken
+   * writes sync token to file
+   * @return {Promise}
+   */
+  setSyncToken(token) {
+    let defer = _vow2.default.defer();
+    (0, _fs.writeFile)(syncTokenPath, token, defer.resolve.bind(defer));
+    return defer.promise();
+  }
+
+  /**
+   * ## contentTypes
+   * fetch content types
+   * content types aren't returned by the api. This will only happen once after
+   * invalidating cache, types will not be requested or updated if they change
+   * @return {Promise}
+   */
+  contentTypes() {
+    var _this = this;
+
+    return this.client.getContentTypes().then((() => {
+      var _ref = _asyncToGenerator(function* (response) {
+        // dbg(response.items[0].sys)
+        for (const type of response.items) yield _this.cache.upsert(type);
+      });
+
+      return function (_x) {
+        return _ref.apply(this, arguments);
+      };
+    })());
+  }
+
+  /**
+   * ## sync
+   * request updated content
+   * @param {String} token sync token returned from last call
+   * @return {Promise}
+   */
+  sync(token) {
+    var _this2 = this;
+
+    // sync api always includes all locales :(
+    // https://www.contentful.com/developers/docs/concepts/locales/
+    return this.client.sync({ nextSyncToken: token, initial: !token }).then((() => {
+      var _ref2 = _asyncToGenerator(function* (response) {
+        // toPlainObject still has circular refs
+        response = JSON.parse(response.stringifySafe());
+        yield _this2.setSyncToken(response.nextSyncToken);
+        for (const entry of response.entries) yield _this2.cache.upsert(entry);
+        for (const asset of response.assets) yield _this2.cache.upsert(asset);
+      });
+
+      return function (_x2) {
+        return _ref2.apply(this, arguments);
+      };
+    })());
   }
 
   /**
@@ -122,7 +228,7 @@ class Space {
    * @return {Promise}
    */
   applyMeta() {
-    return this.cache.find({}, this.opt.resolveDepth).then(docs => {
+    return this.cache.find({}).then(docs => {
       let entries = {
         find: this.cache.find.bind(this.cache),
         findOne: this.cache.findOne.bind(this.cache)
@@ -146,9 +252,9 @@ class Space {
     // for convenience, you can just pass a contentType instead of a query
     return _vow2.default.resolve().then(() => {
       if (typeof query === 'string') {
-        return this.cache.findByContentType(query, this.opt.resolveDepth);
+        return this.cache.findByContentType(query);
       }
-      return this.cache.find(query, this.opt.resolveDepth);
+      return this.cache.find(query);
     }).then(docs => {
       docs.forEach(doc => {
         let file = this.coerce(doc.fields);

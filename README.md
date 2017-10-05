@@ -17,9 +17,7 @@ See the [annotated source][annotated source] or [github repo][github repo]
 
 ## motivation
 
-I really need caching from remote apis to speed up the metalsmith build
-process. I couldn't see a way to modify the official plugin to support caching
-so made something from scratch.
+I really need caching from remote apis to speed up the metalsmith build process. I couldn't see a way to modify the official plugin to support caching so made something from scratch.
 
 ## install
 
@@ -47,8 +45,7 @@ Metalsmith('src')
       destPath: 'articles',
       query: 'Post'
     },
-    resolveDepth: 2,
-    invalidateCache: process.env['NODE_ENV'] === 'production'
+    cache: process.env['NODE_ENV'] !== 'production'
   })
 )
 .build( ... )
@@ -57,46 +54,30 @@ Metalsmith('src')
 ### options
 
  * `space` {String} (required) id of contentful space you wish to scrape
- * `destPath` {String} (required) the path under which you want to place the
-   scraped files
- * `resolveDepth` {Number} (default: 2) recursion for [resolving links](#resolving-links)
- * `concurrency` {Number} (default: 3) concurrent cache ops (memory rw)
- * `parse` {Function} function to convert contentful result to metalsmith file
- * `invalidateCache` {Boolean} clear cache on start
+ * `destPath` {String} (required) the path under which you want to place the   scraped files
+ * `cache` {Boolean|String} (default: `true`) cache mode
+ * `locale` {String} (default: `en-US`) locale
  * `files` {Object} (optional) [file creation]() opts
  * `files.destPath` {String} path under which to place files
  * `files.coerce` {Function} fn to convert files
  * `files.query` {String|Object} [query](#queries) for files to create
 
-### resolving links
-
-Items in a contentful space can reference other items. By default, up to the second level of each item is resolved. You can increase this, but if you have circular references in your structure then doing so will dramatically slow things down.
-
-Suppose in your content model you add a `coverImage` field which links to media stored on contentful. Provided the entry has been resolved, you'll be able to access the url for that file like this:
-
-```
-<header class="intro-header" style="background-image: url('{{coverImage.file.url}}')">
-```
+### contentful data structure
 
 Finding different properties in the returned data may not be intuitive. If you're struggling you should try [metalsmith-debug-ui][metalsmith-debug-ui], and take a look at the data structures returned by the [contentful api][contentful api].
 
+### cache modes
+
+ * *full cache* `true` - in this mode everything will be pulled down once, and no further requests to the contentful api will be issued in future builds
+ * *no cache* `false` - this invalidates cache every build
+ * *sync* `{string}` - any string understood by [parse-duration][parse-duration]. Will use the sync api to request updated items if last sync is older than the duration specified.
+
 ### queries
 
-This plugin doesn't use contentful queries, it just pulls down everything and
-stores it in your cache. You can then query your cache with
-[nedb queries][nedb queries]. Items are stored in cache in the same form
-they're retrieved from contentful with 1 exception, the `sys.contentType`
-property on entries is resolved, just to allow you to query by contentType more easily.
-If you're struggling with queries consider using something like
-[metalsmith-debug-ui][metalsmith-debug-ui] to take a look at the structure of
-data stored in metadata.
+This plugin doesn't use contentful queries, it just pulls down everything and stores it in your cache. You can then query your cache with [nedb queries][nedb queries]. Items are stored in cache in the same form they're retrieved from contentful.
 
 The `contentful` property in metadata exposes two functions `find` and `findOne`. Consider
-the following example. Both return promises which resolve to the query result, and both accept the following options:
-
- * query {Object} (required) nedb query
- * resolveDepth {Number} (default: 0) recursion for link resolving
- * callback {Function} (optional) if that's how you roll
+the following example. Both return promises which resolve to the query result, and both accept a single parameter: a nedb search query.
 
 Usage example:
 
@@ -110,8 +91,7 @@ Metalsmith('src')
 )
 .use((files, metalsmith) => {
   let query = {'fields.file.contentType': /^image/}
-  let resolveDepth = 3 // default is 2
-  return metalsmith.metadata().contentful.find(query, resolveDepth)
+  return metalsmith.metadata().contentful.find(query)
   .then((images) => {
     let imageUrls = images.map((image) => image.fields.file.url)
     metalsmith.metadata().contentfulImageUrls = imageUrls
@@ -120,7 +100,7 @@ Metalsmith('src')
 .build( ... )
 ```
 
-## file creation
+### file creation
 
 This behaviour is optional. If you pass in a `files` property files will be created in the metalsmith files structure.
 
@@ -149,16 +129,19 @@ Metalsmith('src')
 .build( ... )
 ```
 
-## Author
+### content types
+These will only be retrieved once after cache is invalidated, so if you're using sync mode, and change or add content types, you'll need to invalidate your cache to pull down the updated content types.
+
+### Author
 
 Levi Wheatcroft <levi@wht.cr>
 
-## Contributing
+### Contributing
 
 Contributions welcome; Please submit all pull requests against the master
 branch.
 
-## License
+### License
 
  - **MIT** : http://opensource.org/licenses/MIT
 
@@ -168,3 +151,4 @@ branch.
 [nedb queries]: https://github.com/louischatriot/nedb#basic-querying "nedb readme"
 [metalsmith-debug-ui]: https://github.com/leviwheatcroft/metalsmith-debug-ui "metalsmith-debug-ui repo"
 [contentful api]: https://www.contentful.com/developers/docs/references/content-delivery-api/ "contentful api"
+[parse-duration]: https://www.npmjs.com/package/parse-duration "parse-duration repo"
