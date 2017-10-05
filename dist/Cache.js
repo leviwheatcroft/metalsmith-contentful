@@ -85,7 +85,7 @@ class Cache {
    */
   setLocale(object) {
     let locale = this.opt.locale;
-    if (typeof object !== 'object') return object;
+    if (!object || typeof object !== 'object') return object;
     Object.keys(object).forEach(key => {
       if (key === 'sys') return;
       if (object[key] === null) return;
