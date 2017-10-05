@@ -36,13 +36,12 @@
   },
   "homepage": "https://github.com/leviwheatcroft/metalsmith-contentful#readme",
   "dependencies": {
-    "app-root-path": "^2.0.1",
     "async": "^2.5.0",
     "contentful": "^4.6.1",
     "debug": "^2.6.8",
-    "metalsmith-cache": "^1.1.0",
     "moment": "^2.18.1",
-    "nedb": "^1.8.0",
+    "nedb-promise": "^2.0.1",
+    "parse-duration": "^0.1.1",
     "promise-spool": "^1.0.6",
     "slugify": "^1.2.1",
     "vow": "^0.4.13"
