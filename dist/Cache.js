@@ -43,7 +43,7 @@ class Cache {
    * @return {Promise}
    */
   upsert(doc) {
-    return this.db.update({ 'sys.id': doc.sys.id }, doc, { upsert: true });
+    return this.db.update({ 'sys.id': doc.sys.id }, this.setLocale(doc), { upsert: true });
   }
 
   /**
@@ -52,9 +52,10 @@ class Cache {
    * @return {Promise.<Array>} array of docs
    */
   find(query) {
-    return this.db.find(query).then(docs => {
-      return docs.map(this.setLocale.bind(this));
-    });
+    return this.db.find(query);
+    // .then((docs) => {
+    //   return docs.map(this.setLocale.bind(this))
+    // })
   }
 
   /**
@@ -63,7 +64,8 @@ class Cache {
    * @return {Promise.<Object>} single doc
    */
   findOne(query) {
-    return this.db.findOne(query).then(doc => this.setLocale(doc));
+    return this.db.findOne(query);
+    // .then((doc) => this.setLocale(doc))
   }
 
   /**

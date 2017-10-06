@@ -77,7 +77,7 @@ Finding different properties in the returned data may not be intuitive. If you'r
 
 ### queries
 
-This plugin doesn't use contentful queries, it just pulls down everything and stores it in your cache. You can then query your cache with [nedb queries][nedb queries]. Items are stored in cache in the same form they're retrieved from contentful.
+This plugin doesn't use contentful queries, it just pulls down everything and stores it in your cache. You can then query your cache with [nedb queries][nedb queries].
 
 The `contentful` property in metadata exposes two functions `find` and `findOne`. Consider
 the following example. Both return promises which resolve to the query result, and both accept a single parameter: a nedb search query.
