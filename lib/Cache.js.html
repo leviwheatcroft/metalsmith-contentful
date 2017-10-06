@@ -159,7 +159,11 @@ upsert
         </td>
         <td class="code highlight">
           <pre class="javascript">  upsert (doc) {
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.db.update({<span class="hljs-string">'sys.id'</span>: doc.sys.id}, doc, {<span class="hljs-attr">upsert</span>: <span class="hljs-literal">true</span>})
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.db.update(
+      {<span class="hljs-string">'sys.id'</span>: doc.sys.id},
+      <span class="hljs-keyword">this</span>.setLocale(doc),
+      {<span class="hljs-attr">upsert</span>: <span class="hljs-literal">true</span>}
+    )
   }
 
 </pre>
@@ -201,10 +205,22 @@ find
         <td class="code highlight">
           <pre class="javascript">  find (query) {
     <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.db.find(query)
-    .then(<span class="hljs-function">(<span class="hljs-params">docs</span>) =&gt;</span> {
-      <span class="hljs-keyword">return</span> docs.map(<span class="hljs-keyword">this</span>.setLocale.bind(<span class="hljs-keyword">this</span>))
-    })
-  }
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-5" id="section-5"></a>
+</div>
+<p>.then((docs) =&gt; {
+return docs.map(this.setLocale.bind(this))
+})</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  }
 
 </pre>
         </td>
@@ -245,8 +261,20 @@ findOne
         <td class="code highlight">
           <pre class="javascript">  findOne (query) {
     <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.db.findOne(query)
-    .then(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> <span class="hljs-keyword">this</span>.setLocale(doc))
-  }
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-7" id="section-7"></a>
+</div>
+<p>.then((doc) =&gt; this.setLocale(doc))</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">  }
 
 </pre>
         </td>
