@@ -87,7 +87,41 @@ describe('metalsmith-contentful', () => {
       done()
     })
   }).timeout(0)
-
+  it('should allow queries', function (done) {
+    let test = this
+    Metalsmith('test/fixtures/scrape')
+    .use(contentful(Object.assign(
+      {
+        files: {
+          destPath: 'articles',
+          query: 'Post'
+        },
+        cache: true
+      },
+      config.get('metalsmith-contentful')
+    )))
+    .use((files, metalsmith) => {
+      return metalsmith.metadata().contentful.find(
+        {'sys.type': 'Entry'}
+      )
+      .then((docs) => {
+        assert.equal(docs.length, 6)
+        return metalsmith.metadata().contentful.findOne({
+          'fields.title': 'Seven Tips From Ernest Hemingway on How to Write Fiction'
+        })
+      })
+      .then((doc) => {
+        assert.equal(
+          doc.fields.title,
+          'Seven Tips From Ernest Hemingway on How to Write Fiction'
+        )
+      })
+    })
+    .build((err, files) => {
+      if (err) return done(err)
+      done()
+    })
+  }).timeout(0)
   /**
    * resolving links in this plugin isn't ideal, this test seeks to ensure that
    * links are resolved to produce the same result as
