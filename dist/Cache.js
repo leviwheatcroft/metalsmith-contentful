@@ -53,9 +53,6 @@ class Cache {
    */
   find(query) {
     return this.db.find(query);
-    // .then((docs) => {
-    //   return docs.map(this.setLocale.bind(this))
-    // })
   }
 
   /**
@@ -65,7 +62,17 @@ class Cache {
    */
   findOne(query) {
     return this.db.findOne(query);
-    // .then((doc) => this.setLocale(doc))
+  }
+
+  /**
+   * ## haveContentTypes
+   * check whether content types have already been retrieved
+   * @return {Promise}
+   */
+  haveContentTypes() {
+    return this.findOne({ 'sys.type': 'ContentType' }).then(contentType => {
+      if (!contentType) throw new Error('no content types');
+    });
   }
 
   /**

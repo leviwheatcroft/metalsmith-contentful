@@ -108,10 +108,16 @@ class Space {
     this.files = files;
     this.metalsmith = metalsmith;
     return _vow2.default.resolve().then(() => this.getSyncTime()).then(syncTime => {
+      // first run
+      if (syncTime === false) {
+        dbg('cache mode: first run');
+        return this.sync();
+      }
+
       // cache set to invalidate every time
       if (this.opt.cache === false) {
         dbg('cache mode: no cache');
-        return this.cache.invalidate().then(() => this.contentTypes()).then(() => this.sync());
+        return this.cache.invalidate().then(() => this.sync());
       }
 
       // cache only, no further requests
@@ -141,10 +147,12 @@ class Space {
   getSyncToken() {
     let defer = _vow2.default.defer();
     (0, _fs.readFile)(syncTokenPath, (err, token) => {
-      if (err) return defer.resolve(false);
+      if (err) return defer.reject(err);
       defer.resolve(token);
     });
-    return defer.promise();
+    return defer.promise()
+    // file doesn't exist
+    .catch(() => false);
   }
 
   /**
@@ -183,16 +191,19 @@ class Space {
   contentTypes() {
     var _this = this;
 
-    return this.client.getContentTypes().then((() => {
-      var _ref = _asyncToGenerator(function* (response) {
-        // dbg(response.items[0].sys)
-        for (const type of response.items) yield _this.cache.upsert(type);
-      });
+    return this.cache.haveContentTypes().catch(err => {
+      if (err.message !== 'no content types') throw err;
+      return this.client.getContentTypes().then((() => {
+        var _ref = _asyncToGenerator(function* (response) {
+          // dbg(response.items[0].sys)
+          for (const type of response.items) yield _this.cache.upsert(type);
+        });
 
-      return function (_x) {
-        return _ref.apply(this, arguments);
-      };
-    })());
+        return function (_x) {
+          return _ref.apply(this, arguments);
+        };
+      })());
+    });
   }
 
   /**
@@ -204,9 +215,11 @@ class Space {
   sync(token) {
     var _this2 = this;
 
+    // ensure we have contentTypes
+    return this.contentTypes()
     // sync api always includes all locales :(
     // https://www.contentful.com/developers/docs/concepts/locales/
-    return this.client.sync({ nextSyncToken: token, initial: !token }).then((() => {
+    .then(() => this.client.sync({ nextSyncToken: token, initial: !token })).then((() => {
       var _ref2 = _asyncToGenerator(function* (response) {
         // toPlainObject still has circular refs
         response = JSON.parse(response.stringifySafe());
@@ -257,7 +270,7 @@ class Space {
       return this.cache.find(query);
     }).then(docs => {
       docs.forEach(doc => {
-        let file = this.coerce(doc.fields);
+        let file = this.coerce(doc);
         // attach to metalsmith files structure
         this.files[file.path] = file;
       });
@@ -268,27 +281,33 @@ class Space {
   /**
    * ## coerce
    * translate entry from contentful to something more metalsmith
-   *  - also where we magle a path
+   *  - also where we mangle a path
    *  - applies passed in coerce fn too
    * @param {Object} file - entry from contentful
    * @return {Object} metalsmith file
    */
   coerce(file) {
+    // const { fields, sys } = file
+    const {
+      fields
+    } = file;
     // the contentful example spaces use `body` for `content`
-    if (!file.contents && file.body) file.content = file.body;
+    if (!fields.contents && fields.body) file.contents = fields.body;
     // many plugins expect `contents` to be a `Buffer`
-    if (file.contents) file.contents = Buffer.from(file.contents);
+    if (fields.contents) file.contents = Buffer.from(fields.contents);
     // convert all ISO_8601 strings to moments <-- handy!!
-    Object.keys(file).forEach(key => {
-      if (typeof file[key] !== 'string') return;
-      let date = (0, _moment2.default)(file[key], _moment2.default.ISO_8601, true);
+    Object.keys(fields).forEach(key => {
+      if (typeof fields[key] !== 'string') return;
+      let date = (0, _moment2.default)(fields[key], _moment2.default.ISO_8601, true);
       if (!date.isValid()) return;
-      file[key] = date;
+      fields[key] = date;
     });
     // slug-to-the-fi
-    file.slug = file.title ? (0, _slugify2.default)(file.title) : '';
+    dbg(fields.title);
+    file.slug = fields.title ? (0, _slugify2.default)(fields.title) : '';
     // mangle path
     file.path = (0, _path.join)(this.opt.files.destPath, `${file.slug}.md`);
+    dbg('file.path', file.path);
     // apply passed in fn
     file = this.opt.files.coerce(file);
     return file;

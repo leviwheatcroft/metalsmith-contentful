@@ -7,18 +7,19 @@ import Metalsmith from 'metalsmith'
 import assert from 'assert'
 import debug from 'debug'
 // import { createClient } from 'contentful'
+// eslint-disable-next-line no-unused-vars
 const dbg = debug('metalsmith-contentful')
 import sinon from 'sinon'
 import http from 'http'
-import {
-  createClient
-} from 'contentful'
-import resolveResponse from 'contentful-resolve-response'
-import cloneDeep from 'lodash.clonedeep'
-import {
-  detailedDiff as diff
-} from 'deep-object-diff'
-import vow from 'vow'
+// import {
+//   createClient
+// } from 'contentful'
+// import resolveResponse from 'contentful-resolve-response'
+// import cloneDeep from 'lodash.clonedeep'
+// import {
+//   detailedDiff as diff
+// } from 'deep-object-diff'
+// import vow from 'vow'
 
 // import debug from 'debug'
 // const dbg = debug('metalsmith-google-drive')
@@ -51,8 +52,9 @@ describe('metalsmith-contentful', () => {
       )))
       .use((files, metalsmith) => {
         let file = files['articles/Down-the-Rabbit-Hole.md']
+        const { fields } = file
         assert.ok(file)
-        assert.equal(file.category[0].fields.title, 'Literature') // resolved
+        assert.equal(fields.category[0].fields.title, 'Literature') // resolved
         assert.ok(Object.keys(metalsmith.metadata().contentful).length)
       })
       .build((err, files) => {
@@ -77,9 +79,10 @@ describe('metalsmith-contentful', () => {
     )))
     .use((files, metalsmith) => {
       let file = files['articles/Down-the-Rabbit-Hole.md']
+      const { fields } = file
       assert.equal(test.requestSpy.callCount, 0)
       assert.ok(file)
-      assert.equal(file.category[0].fields.title, 'Literature') // resolved
+      assert.equal(fields.category[0].fields.title, 'Literature') // resolved
       assert.ok(Object.keys(metalsmith.metadata().contentful).length)
     })
     .build((err, files) => {
@@ -88,7 +91,6 @@ describe('metalsmith-contentful', () => {
     })
   }).timeout(0)
   it('should allow queries', function (done) {
-    let test = this
     Metalsmith('test/fixtures/scrape')
     .use(contentful(Object.assign(
       {
@@ -116,6 +118,29 @@ describe('metalsmith-contentful', () => {
           'Seven Tips From Ernest Hemingway on How to Write Fiction'
         )
       })
+    })
+    .build((err, files) => {
+      if (err) return done(err)
+      done()
+    })
+  }).timeout(0)
+  it('should provide sys structure', function (done) {
+    Metalsmith('test/fixtures/scrape')
+    .use(contentful(Object.assign(
+      {
+        files: {
+          destPath: 'articles',
+          query: 'Post'
+        },
+        cache: true
+      },
+      config.get('metalsmith-contentful')
+    )))
+    .use((files, metalsmith) => {
+      let file = files['articles/Down-the-Rabbit-Hole.md']
+      assert.ok(file.sys)
+      assert.ok(file.sys.createdAt)
+      assert.ok(file.sys.updatedAt)
     })
     .build((err, files) => {
       if (err) return done(err)
