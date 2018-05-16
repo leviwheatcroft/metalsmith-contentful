@@ -140,6 +140,8 @@ describe('metalsmith-contentful', () => {
       let file = files['articles/Down-the-Rabbit-Hole.md']
       assert.ok(file.sys)
       assert.ok(file.sys.createdAt)
+      dbg(file.sys.createdAt)
+      assert.ok(file.sys.createdAt.format)
       assert.ok(file.sys.updatedAt)
     })
     .build((err, files) => {

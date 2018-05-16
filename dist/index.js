@@ -289,7 +289,8 @@ class Space {
   coerce(file) {
     // const { fields, sys } = file
     const {
-      fields
+      fields,
+      sys
     } = file;
     // the contentful example spaces use `body` for `content`
     if (!fields.contents && fields.body) file.contents = fields.body;
@@ -301,6 +302,13 @@ class Space {
       let date = (0, _moment2.default)(fields[key], _moment2.default.ISO_8601, true);
       if (!date.isValid()) return;
       fields[key] = date;
+    });
+    // repeat for sys, un-dry but whatever
+    Object.keys(sys).forEach(key => {
+      if (typeof sys[key] !== 'string') return;
+      let date = (0, _moment2.default)(sys[key], _moment2.default.ISO_8601, true);
+      if (!date.isValid()) return;
+      sys[key] = date;
     });
     // slug-to-the-fi
     dbg(fields.title);
