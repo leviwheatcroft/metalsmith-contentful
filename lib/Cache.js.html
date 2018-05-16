@@ -39,6 +39,10 @@
       </div>
 
       <div class="heading h2">
+        <a href="#havecontenttypes">haveContentTypes</a>
+      </div>
+
+      <div class="heading h2">
         <a href="#findbycontenttype">findByContentType</a>
       </div>
 
@@ -205,22 +209,7 @@ find
         <td class="code highlight">
           <pre class="javascript">  find (query) {
     <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.db.find(query)
-</pre>
-        </td>
-      </tr>
-    
-      <tr>
-        <td class="docs">
-          <div class="pilwrap">
-  <a class="pilcrow" href="#section-5" id="section-5"></a>
-</div>
-<p>.then((docs) =&gt; {
-return docs.map(this.setLocale.bind(this))
-})</p>
-
-        </td>
-        <td class="code highlight">
-          <pre class="javascript">  }
+  }
 
 </pre>
         </td>
@@ -261,20 +250,43 @@ findOne
         <td class="code highlight">
           <pre class="javascript">  findOne (query) {
     <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.db.findOne(query)
+  }
+
 </pre>
         </td>
       </tr>
     
       <tr>
         <td class="docs">
-          <div class="pilwrap">
-  <a class="pilcrow" href="#section-7" id="section-7"></a>
+          <div class="dox">
+<div class="summary">
+<div class="pilwrap" id="havecontenttypes">
+  <h2>
+    <a href="#havecontenttypes" name="havecontenttypes" class="pilcrow"></a>
+haveContentTypes
+  </h2>
 </div>
-<p>.then((doc) =&gt; this.setLocale(doc))</p>
+<p>check whether content types have already been retrieved</p>
+</div>
+<div class="body">
+</div>
+<div class="details">
+<div class="dox_tag_title">Returns</div>
+<div class="dox_tag_detail">
+<span class="dox_tag_name"></span>
+<span class="dox_type">Promise</span>
+</div>
+</div>
+</div>
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">  }
+          <pre class="javascript">  haveContentTypes () {
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.findOne({<span class="hljs-string">'sys.type'</span>: <span class="hljs-string">'ContentType'</span>})
+    .then(<span class="hljs-function">(<span class="hljs-params">contentType</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (!contentType) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'no content types'</span>)
+    })
+  }
 
 </pre>
         </td>

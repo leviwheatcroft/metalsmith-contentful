@@ -63,23 +63,14 @@
           <div class="pilwrap">
   <a class="pilcrow" href="#section-2" id="section-2"></a>
 </div>
-<p>import { createClient } from 'contentful'</p>
+<p>import { createClient } from 'contentful'
+eslint-disable-next-line no-unused-vars</p>
 
         </td>
         <td class="code highlight">
           <pre class="javascript"><span class="hljs-keyword">const</span> dbg = debug(<span class="hljs-string">'metalsmith-contentful'</span>)
 <span class="hljs-keyword">import</span> sinon <span class="hljs-keyword">from</span> <span class="hljs-string">'sinon'</span>
 <span class="hljs-keyword">import</span> http <span class="hljs-keyword">from</span> <span class="hljs-string">'http'</span>
-<span class="hljs-keyword">import</span> {
-  createClient
-} <span class="hljs-keyword">from</span> <span class="hljs-string">'contentful'</span>
-<span class="hljs-keyword">import</span> resolveResponse <span class="hljs-keyword">from</span> <span class="hljs-string">'contentful-resolve-response'</span>
-<span class="hljs-keyword">import</span> cloneDeep <span class="hljs-keyword">from</span> <span class="hljs-string">'lodash.clonedeep'</span>
-<span class="hljs-keyword">import</span> {
-  detailedDiff <span class="hljs-keyword">as</span> diff
-} <span class="hljs-keyword">from</span> <span class="hljs-string">'deep-object-diff'</span>
-<span class="hljs-keyword">import</span> vow <span class="hljs-keyword">from</span> <span class="hljs-string">'vow'</span>
-
 </pre>
         </td>
       </tr>
@@ -88,6 +79,28 @@
         <td class="docs">
           <div class="pilwrap">
   <a class="pilcrow" href="#section-3" id="section-3"></a>
+</div>
+<p>import {
+createClient
+} from 'contentful'
+import resolveResponse from 'contentful-resolve-response'
+import cloneDeep from 'lodash.clonedeep'
+import {
+detailedDiff as diff
+} from 'deep-object-diff'
+import vow from 'vow'</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-4" id="section-4"></a>
 </div>
 <p>import debug from 'debug'
 const dbg = debug('metalsmith-google-drive')</p>
@@ -107,7 +120,7 @@ describe(<span class="hljs-string">'metalsmith-contentful'</span>, () =&gt; {
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-4" id="section-4"></a>
+  <a class="pilcrow" href="#section-5" id="section-5"></a>
 </div>
 <p>create spy
 sinon.spy(cloudinary.api, 'resources')</p>
@@ -125,7 +138,7 @@ sinon.spy(cloudinary.api, 'resources')</p>
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-5" id="section-5"></a>
+  <a class="pilcrow" href="#section-6" id="section-6"></a>
 </div>
 <p>cloudinary.api.resources.restore()</p>
 
@@ -147,8 +160,9 @@ sinon.spy(cloudinary.api, 'resources')</p>
       )))
       .use(<span class="hljs-function">(<span class="hljs-params">files, metalsmith</span>) =&gt;</span> {
         <span class="hljs-keyword">let</span> file = files[<span class="hljs-string">'articles/Down-the-Rabbit-Hole.md'</span>]
+        <span class="hljs-keyword">const</span> { fields } = file
         assert.ok(file)
-        assert.equal(file.category[<span class="hljs-number">0</span>].fields.title, <span class="hljs-string">'Literature'</span>) <span class="hljs-comment">// resolved</span>
+        assert.equal(fields.category[<span class="hljs-number">0</span>].fields.title, <span class="hljs-string">'Literature'</span>) <span class="hljs-comment">// resolved</span>
         assert.ok(<span class="hljs-built_in">Object</span>.keys(metalsmith.metadata().contentful).length)
       })
       .build(<span class="hljs-function">(<span class="hljs-params">err, files</span>) =&gt;</span> {
@@ -173,9 +187,10 @@ sinon.spy(cloudinary.api, 'resources')</p>
     )))
     .use(<span class="hljs-function">(<span class="hljs-params">files, metalsmith</span>) =&gt;</span> {
       <span class="hljs-keyword">let</span> file = files[<span class="hljs-string">'articles/Down-the-Rabbit-Hole.md'</span>]
+      <span class="hljs-keyword">const</span> { fields } = file
       assert.equal(test.requestSpy.callCount, <span class="hljs-number">0</span>)
       assert.ok(file)
-      assert.equal(file.category[<span class="hljs-number">0</span>].fields.title, <span class="hljs-string">'Literature'</span>) <span class="hljs-comment">// resolved</span>
+      assert.equal(fields.category[<span class="hljs-number">0</span>].fields.title, <span class="hljs-string">'Literature'</span>) <span class="hljs-comment">// resolved</span>
       assert.ok(<span class="hljs-built_in">Object</span>.keys(metalsmith.metadata().contentful).length)
     })
     .build(<span class="hljs-function">(<span class="hljs-params">err, files</span>) =&gt;</span> {
@@ -183,7 +198,65 @@ sinon.spy(cloudinary.api, 'resources')</p>
       done()
     })
   }).timeout(<span class="hljs-number">0</span>)
-
+  it(<span class="hljs-string">'should allow queries'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">done</span>) </span>{
+    Metalsmith(<span class="hljs-string">'test/fixtures/scrape'</span>)
+    .use(contentful(<span class="hljs-built_in">Object</span>.assign(
+      {
+        <span class="hljs-attr">files</span>: {
+          <span class="hljs-attr">destPath</span>: <span class="hljs-string">'articles'</span>,
+          <span class="hljs-attr">query</span>: <span class="hljs-string">'Post'</span>
+        },
+        <span class="hljs-attr">cache</span>: <span class="hljs-literal">true</span>
+      },
+      config.get(<span class="hljs-string">'metalsmith-contentful'</span>)
+    )))
+    .use(<span class="hljs-function">(<span class="hljs-params">files, metalsmith</span>) =&gt;</span> {
+      <span class="hljs-keyword">return</span> metalsmith.metadata().contentful.find(
+        {<span class="hljs-string">'sys.type'</span>: <span class="hljs-string">'Entry'</span>}
+      )
+      .then(<span class="hljs-function">(<span class="hljs-params">docs</span>) =&gt;</span> {
+        assert.equal(docs.length, <span class="hljs-number">6</span>)
+        <span class="hljs-keyword">return</span> metalsmith.metadata().contentful.findOne({
+          <span class="hljs-string">'fields.title'</span>: <span class="hljs-string">'Seven Tips From Ernest Hemingway on How to Write Fiction'</span>
+        })
+      })
+      .then(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> {
+        assert.equal(
+          doc.fields.title,
+          <span class="hljs-string">'Seven Tips From Ernest Hemingway on How to Write Fiction'</span>
+        )
+      })
+    })
+    .build(<span class="hljs-function">(<span class="hljs-params">err, files</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> done(err)
+      done()
+    })
+  }).timeout(<span class="hljs-number">0</span>)
+  it(<span class="hljs-string">'should provide sys structure'</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">done</span>) </span>{
+    Metalsmith(<span class="hljs-string">'test/fixtures/scrape'</span>)
+    .use(contentful(<span class="hljs-built_in">Object</span>.assign(
+      {
+        <span class="hljs-attr">files</span>: {
+          <span class="hljs-attr">destPath</span>: <span class="hljs-string">'articles'</span>,
+          <span class="hljs-attr">query</span>: <span class="hljs-string">'Post'</span>
+        },
+        <span class="hljs-attr">cache</span>: <span class="hljs-literal">true</span>
+      },
+      config.get(<span class="hljs-string">'metalsmith-contentful'</span>)
+    )))
+    .use(<span class="hljs-function">(<span class="hljs-params">files, metalsmith</span>) =&gt;</span> {
+      <span class="hljs-keyword">let</span> file = files[<span class="hljs-string">'articles/Down-the-Rabbit-Hole.md'</span>]
+      assert.ok(file.sys)
+      assert.ok(file.sys.createdAt)
+      dbg(file.sys.createdAt)
+      assert.ok(file.sys.createdAt.format)
+      assert.ok(file.sys.updatedAt)
+    })
+    .build(<span class="hljs-function">(<span class="hljs-params">err, files</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> done(err)
+      done()
+    })
+  }).timeout(<span class="hljs-number">0</span>)
 </pre>
         </td>
       </tr>
@@ -191,7 +264,7 @@ sinon.spy(cloudinary.api, 'resources')</p>
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-6" id="section-6"></a>
+  <a class="pilcrow" href="#section-7" id="section-7"></a>
 </div>
 <div class="dox">
 <div class="summary">

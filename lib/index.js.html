@@ -321,15 +321,13 @@ contentful
           <div class="pilwrap">
   <a class="pilcrow" href="#section-6" id="section-6"></a>
 </div>
-<p>cache set to invalidate every time</p>
+<p>first run</p>
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.opt.cache === <span class="hljs-literal">false</span>) {
-        dbg(<span class="hljs-string">'cache mode: no cache'</span>)
-        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.invalidate()
-        .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.contentTypes())
-        .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.sync())
+          <pre class="javascript">      <span class="hljs-keyword">if</span> (syncTime === <span class="hljs-literal">false</span>) {
+        dbg(<span class="hljs-string">'cache mode: first run'</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.sync()
       }
 
 </pre>
@@ -340,6 +338,25 @@ contentful
         <td class="docs">
           <div class="pilwrap">
   <a class="pilcrow" href="#section-7" id="section-7"></a>
+</div>
+<p>cache set to invalidate every time</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.opt.cache === <span class="hljs-literal">false</span>) {
+        dbg(<span class="hljs-string">'cache mode: no cache'</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.invalidate()
+        .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.sync())
+      }
+
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-8" id="section-8"></a>
 </div>
 <p>cache only, no further requests</p>
 
@@ -360,7 +377,7 @@ contentful
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-8" id="section-8"></a>
+  <a class="pilcrow" href="#section-9" id="section-9"></a>
 </div>
 <p>time to live set</p>
 
@@ -381,7 +398,7 @@ contentful
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-9" id="section-9"></a>
+  <a class="pilcrow" href="#section-10" id="section-10"></a>
 </div>
 <p>have sync token but it's older than ttl</p>
 
@@ -429,10 +446,24 @@ getSyncToken
           <pre class="javascript">  getSyncToken () {
     <span class="hljs-keyword">let</span> defer = vow.defer()
     readFile(syncTokenPath, (err, token) =&gt; {
-      <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.resolve(<span class="hljs-literal">false</span>)
+      <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> defer.reject(err)
       defer.resolve(token)
     })
     <span class="hljs-keyword">return</span> defer.promise()
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-12" id="section-12"></a>
+</div>
+<p>file doesn't exist</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">    .catch(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-literal">false</span>)
   }
 
 </pre>
@@ -479,7 +510,7 @@ getSyncTime
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-12" id="section-12"></a>
+  <a class="pilcrow" href="#section-14" id="section-14"></a>
 </div>
 <p>file doesn't exist</p>
 
@@ -555,8 +586,11 @@ invalidating cache, types will not be requested or updated if they change</p>
         </td>
         <td class="code highlight">
           <pre class="javascript">  contentTypes () {
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.client.getContentTypes()
-    .then(<span class="hljs-keyword">async</span> (response) =&gt; {
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.cache.haveContentTypes()
+    .catch(<span class="hljs-function">(<span class="hljs-params">err</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (err.message !== <span class="hljs-string">'no content types'</span>) <span class="hljs-keyword">throw</span> err
+      <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.client.getContentTypes()
+      .then(<span class="hljs-keyword">async</span> (response) =&gt; {
 </pre>
         </td>
       </tr>
@@ -564,13 +598,14 @@ invalidating cache, types will not be requested or updated if they change</p>
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-15" id="section-15"></a>
+  <a class="pilcrow" href="#section-17" id="section-17"></a>
 </div>
 <p>dbg(response.items[0].sys)</p>
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">      <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> type <span class="hljs-keyword">of</span> response.items) <span class="hljs-keyword">await</span> <span class="hljs-keyword">this</span>.cache.upsert(type)
+          <pre class="javascript">        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> type <span class="hljs-keyword">of</span> response.items) <span class="hljs-keyword">await</span> <span class="hljs-keyword">this</span>.cache.upsert(type)
+      })
     })
   }
 
@@ -618,14 +653,28 @@ sync
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-17" id="section-17"></a>
+  <a class="pilcrow" href="#section-19" id="section-19"></a>
+</div>
+<p>ensure we have contentTypes</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.contentTypes()
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-20" id="section-20"></a>
 </div>
 <p>sync api always includes all locales :(
 https://www.contentful.com/developers/docs/concepts/locales/</p>
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.client.sync({<span class="hljs-attr">nextSyncToken</span>: token, <span class="hljs-attr">initial</span>: !token})
+          <pre class="javascript">    .then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-keyword">this</span>.client.sync({<span class="hljs-attr">nextSyncToken</span>: token, <span class="hljs-attr">initial</span>: !token}))
     .then(<span class="hljs-keyword">async</span> (response) =&gt; {
 </pre>
         </td>
@@ -634,7 +683,7 @@ https://www.contentful.com/developers/docs/concepts/locales/</p>
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-18" id="section-18"></a>
+  <a class="pilcrow" href="#section-21" id="section-21"></a>
 </div>
 <p>toPlainObject still has circular refs</p>
 
@@ -691,7 +740,7 @@ metalsmith meta in an object keyed by contentful id</p>
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-20" id="section-20"></a>
+  <a class="pilcrow" href="#section-23" id="section-23"></a>
 </div>
 <p>key meta by id, omit <code>sys</code></p>
 
@@ -742,7 +791,7 @@ makeFiles
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-22" id="section-22"></a>
+  <a class="pilcrow" href="#section-25" id="section-25"></a>
 </div>
 <p>for convenience, you can just pass a contentType instead of a query</p>
 
@@ -757,7 +806,7 @@ makeFiles
     })
     .then(<span class="hljs-function">(<span class="hljs-params">docs</span>) =&gt;</span> {
       docs.forEach(<span class="hljs-function">(<span class="hljs-params">doc</span>) =&gt;</span> {
-        <span class="hljs-keyword">let</span> file = <span class="hljs-keyword">this</span>.coerce(doc.fields)
+        <span class="hljs-keyword">let</span> file = <span class="hljs-keyword">this</span>.coerce(doc)
 </pre>
         </td>
       </tr>
@@ -765,7 +814,7 @@ makeFiles
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-23" id="section-23"></a>
+  <a class="pilcrow" href="#section-26" id="section-26"></a>
 </div>
 <p>attach to metalsmith files structure</p>
 
@@ -793,7 +842,7 @@ coerce
 </div>
 <p>translate entry from contentful to something more metalsmith</p>
 <ul>
-<li>also where we magle a path</li>
+<li>also where we mangle a path</li>
 <li>applies passed in coerce fn too</li>
 </ul>
 </div>
@@ -829,60 +878,16 @@ coerce
       <tr>
         <td class="docs">
           <div class="pilwrap">
-  <a class="pilcrow" href="#section-25" id="section-25"></a>
-</div>
-<p>the contentful example spaces use <code>body</code> for <code>content</code></p>
-
-        </td>
-        <td class="code highlight">
-          <pre class="javascript">    <span class="hljs-keyword">if</span> (!file.contents &amp;&amp; file.body) file.content = file.body
-</pre>
-        </td>
-      </tr>
-    
-      <tr>
-        <td class="docs">
-          <div class="pilwrap">
-  <a class="pilcrow" href="#section-26" id="section-26"></a>
-</div>
-<p>many plugins expect <code>contents</code> to be a <code>Buffer</code></p>
-
-        </td>
-        <td class="code highlight">
-          <pre class="javascript">    <span class="hljs-keyword">if</span> (file.contents) file.contents = Buffer.from(file.contents)
-</pre>
-        </td>
-      </tr>
-    
-      <tr>
-        <td class="docs">
-          <div class="pilwrap">
-  <a class="pilcrow" href="#section-27" id="section-27"></a>
-</div>
-<p>convert all ISO_8601 strings to moments &lt;-- handy!!</p>
-
-        </td>
-        <td class="code highlight">
-          <pre class="javascript">    <span class="hljs-built_in">Object</span>.keys(file).forEach(<span class="hljs-function">(<span class="hljs-params">key</span>) =&gt;</span> {
-      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> file[key] !== <span class="hljs-string">'string'</span>) <span class="hljs-keyword">return</span>
-      <span class="hljs-keyword">let</span> date = moment(file[key], moment.ISO_8601, <span class="hljs-literal">true</span>)
-      <span class="hljs-keyword">if</span> (!date.isValid()) <span class="hljs-keyword">return</span>
-      file[key] = date
-    })
-</pre>
-        </td>
-      </tr>
-    
-      <tr>
-        <td class="docs">
-          <div class="pilwrap">
   <a class="pilcrow" href="#section-28" id="section-28"></a>
 </div>
-<p>slug-to-the-fi</p>
+<p>const { fields, sys } = file</p>
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">    file.slug = file.title ? slugify(file.title) : <span class="hljs-string">''</span>
+          <pre class="javascript">    <span class="hljs-keyword">const</span> {
+      fields,
+      sys
+    } = file
 </pre>
         </td>
       </tr>
@@ -892,11 +897,11 @@ coerce
           <div class="pilwrap">
   <a class="pilcrow" href="#section-29" id="section-29"></a>
 </div>
-<p>mangle path</p>
+<p>the contentful example spaces use <code>body</code> for <code>content</code></p>
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">    file.path = join(<span class="hljs-keyword">this</span>.opt.files.destPath, <span class="hljs-string">`<span class="hljs-subst">${file.slug}</span>.md`</span>)
+          <pre class="javascript">    <span class="hljs-keyword">if</span> (!fields.contents &amp;&amp; fields.body) file.contents = fields.body
 </pre>
         </td>
       </tr>
@@ -905,6 +910,88 @@ coerce
         <td class="docs">
           <div class="pilwrap">
   <a class="pilcrow" href="#section-30" id="section-30"></a>
+</div>
+<p>many plugins expect <code>contents</code> to be a <code>Buffer</code></p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">    <span class="hljs-keyword">if</span> (fields.contents) file.contents = Buffer.from(fields.contents)
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-31" id="section-31"></a>
+</div>
+<p>convert all ISO_8601 strings to moments &lt;-- handy!!</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">    <span class="hljs-built_in">Object</span>.keys(fields).forEach(<span class="hljs-function">(<span class="hljs-params">key</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> fields[key] !== <span class="hljs-string">'string'</span>) <span class="hljs-keyword">return</span>
+      <span class="hljs-keyword">let</span> date = moment(fields[key], moment.ISO_8601, <span class="hljs-literal">true</span>)
+      <span class="hljs-keyword">if</span> (!date.isValid()) <span class="hljs-keyword">return</span>
+      fields[key] = date
+    })
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-32" id="section-32"></a>
+</div>
+<p>repeat for sys, un-dry but whatever</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">    <span class="hljs-built_in">Object</span>.keys(sys).forEach(<span class="hljs-function">(<span class="hljs-params">key</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> sys[key] !== <span class="hljs-string">'string'</span>) <span class="hljs-keyword">return</span>
+      <span class="hljs-keyword">let</span> date = moment(sys[key], moment.ISO_8601, <span class="hljs-literal">true</span>)
+      <span class="hljs-keyword">if</span> (!date.isValid()) <span class="hljs-keyword">return</span>
+      sys[key] = date
+    })
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-33" id="section-33"></a>
+</div>
+<p>slug-to-the-fi</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">    dbg(fields.title)
+    file.slug = fields.title ? slugify(fields.title) : <span class="hljs-string">''</span>
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-34" id="section-34"></a>
+</div>
+<p>mangle path</p>
+
+        </td>
+        <td class="code highlight">
+          <pre class="javascript">    file.path = join(<span class="hljs-keyword">this</span>.opt.files.destPath, <span class="hljs-string">`<span class="hljs-subst">${file.slug}</span>.md`</span>)
+    dbg(<span class="hljs-string">'file.path'</span>, file.path)
+</pre>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="docs">
+          <div class="pilwrap">
+  <a class="pilcrow" href="#section-35" id="section-35"></a>
 </div>
 <p>apply passed in fn</p>
 
