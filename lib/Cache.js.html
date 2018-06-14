@@ -81,6 +81,9 @@
 <span class="hljs-keyword">import</span> {
   datastore <span class="hljs-keyword">as</span> nedb
 } <span class="hljs-keyword">from</span> <span class="hljs-string">'nedb-promise'</span>
+<span class="hljs-keyword">import</span> {
+  CacheError
+} <span class="hljs-keyword">from</span> <span class="hljs-string">'./Errors'</span>
 
 <span class="hljs-keyword">const</span> dbg = debug(<span class="hljs-string">'metalsmith-contentful'</span>)
 
@@ -281,11 +284,9 @@ haveContentTypes
 
         </td>
         <td class="code highlight">
-          <pre class="javascript">  haveContentTypes () {
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.findOne({<span class="hljs-string">'sys.type'</span>: <span class="hljs-string">'ContentType'</span>})
-    .then(<span class="hljs-function">(<span class="hljs-params">contentType</span>) =&gt;</span> {
-      <span class="hljs-keyword">if</span> (!contentType) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'no content types'</span>)
-    })
+          <pre class="javascript">  <span class="hljs-keyword">async</span> haveContentTypes () {
+    <span class="hljs-keyword">const</span> contentType = <span class="hljs-keyword">await</span> <span class="hljs-keyword">this</span>.findOne({<span class="hljs-string">'sys.type'</span>: <span class="hljs-string">'ContentType'</span>})
+    <span class="hljs-keyword">if</span> (!contentType) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> CacheError(<span class="hljs-string">'NO_CONTENT_TYPES'</span>)
   }
 
 </pre>
